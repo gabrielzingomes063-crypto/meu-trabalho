@@ -1,0 +1,570 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Desenvolvimento de sites profissionais, modernos e responsivos. Solicite seu orçamento pelo Instagram.">
+<title>GB Digital | Desenvolvimento Web</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --red: #ed2633;
+  --black: #090909;
+  --panel: #151515;
+  --white: #fff;
+  --gray: #aaa;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--black);
+  color: var(--white);
+  font-family: 'Inter', sans-serif;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.container {
+  width: min(1120px, 90%);
+  margin: auto;
+}
+
+header {
+  background: #080808;
+  border-bottom: 1px solid #252525;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+nav {
+  min-height: 75px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+}
+
+.logo {
+  font-weight: 900;
+  font-size: 20px;
+}
+
+.logo span { color: var(--red); }
+
+.links {
+  display: flex;
+  gap: 25px;
+}
+
+.links a {
+  font-size: 12px;
+  font-weight: 700;
+  color: #ccc;
+}
+
+.links a:hover { color: var(--red); }
+
+.btn {
+  display: inline-block;
+  background: var(--red);
+  color: white;
+  padding: 14px 22px;
+  border-radius: 5px;
+  font-size: 12px;
+  font-weight: 800;
+  transition: .2s;
+  border: 1px solid var(--red);
+  text-align: center;
+  cursor: pointer;
+}
+
+.btn:hover {
+  background: transparent;
+  transform: translateY(-2px);
+}
+
+.hero {
+  min-height: 620px;
+  display: flex;
+  align-items: center;
+  background:
+    linear-gradient(90deg, #080808 15%, #080808e8 48%, #08080855),
+    url("https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=1800&q=85")
+    center/cover;
+}
+
+.hero-content {
+  max-width: 670px;
+  padding: 100px 0;
+}
+
+.tag {
+  color: var(--red);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+
+.hero h1 {
+  font-size: clamp(40px, 7vw, 75px);
+  line-height: 1.05;
+  margin: 22px 0;
+  font-weight: 900;
+  letter-spacing: -3px;
+}
+
+.hero h1 span { color: var(--red); }
+
+.hero p {
+  color: #c4c4c4;
+  font-size: 16px;
+  line-height: 1.8;
+  max-width: 550px;
+  margin-bottom: 30px;
+}
+
+section { padding: 85px 0; }
+
+.heading { margin-bottom: 38px; }
+
+.heading small {
+  color: var(--red);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 3px;
+}
+
+.heading h2 {
+  font-size: clamp(28px, 4vw, 42px);
+  margin-top: 12px;
+}
+
+.heading p {
+  color: var(--gray);
+  font-size: 14px;
+  line-height: 1.8;
+  max-width: 650px;
+  margin-top: 12px;
+}
+
+.services {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.service {
+  background: var(--panel);
+  padding: 28px;
+  border: 1px solid #292929;
+  border-radius: 7px;
+  transition: .25s;
+}
+
+.service:hover {
+  border-color: var(--red);
+  transform: translateY(-5px);
+}
+
+.number {
+  color: var(--red);
+  font-size: 27px;
+  font-weight: 900;
+}
+
+.service h3 {
+  margin: 18px 0 12px;
+  font-size: 17px;
+}
+
+.service p {
+  color: var(--gray);
+  font-size: 13px;
+  line-height: 1.8;
+}
+
+.about { background: #141414; }
+
+.about-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 50px;
+  align-items: center;
+}
+
+.about-image img {
+  width: 100%;
+  height: 380px;
+  object-fit: cover;
+  border-radius: 7px;
+}
+
+.about-text h2 {
+  font-size: 38px;
+  line-height: 1.2;
+  margin: 15px 0;
+}
+
+.about-text h2 span { color: var(--red); }
+
+.about-text p {
+  color: var(--gray);
+  font-size: 14px;
+  line-height: 1.9;
+  margin-bottom: 18px;
+}
+
+.projects {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 22px;
+}
+
+.project {
+  background: var(--panel);
+  border: 1px solid #292929;
+  border-radius: 7px;
+  overflow: hidden;
+}
+
+.project img {
+  width: 100%;
+  height: 230px;
+  object-fit: cover;
+  display: block;
+}
+
+.project-info { padding: 22px; }
+
+.project-info small {
+  color: var(--red);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 2px;
+}
+
+.project-info h3 {
+  margin: 10px 0;
+  font-size: 19px;
+}
+
+.project-info p {
+  color: var(--gray);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.budget {
+  background: #141414;
+  text-align: center;
+}
+
+.budget h2 {
+  font-size: clamp(28px, 5vw, 43px);
+  margin: 15px 0;
+}
+
+.budget p {
+  max-width: 620px;
+  margin: 0 auto 25px;
+  color: var(--gray);
+  font-size: 14px;
+  line-height: 1.8;
+}
+
+.budget strong { color: var(--red); }
+
+.contact {
+  text-align: center;
+  background: linear-gradient(120deg, #a50f1b, #ed2633);
+}
+
+.contact h2 {
+  font-size: clamp(28px, 5vw, 43px);
+  margin-bottom: 15px;
+}
+
+.contact p {
+  color: #ffe5e5;
+  margin-bottom: 25px;
+  font-size: 14px;
+  line-height: 1.8;
+}
+
+.contact .btn {
+  background: white;
+  color: #111;
+  border-color: white;
+}
+
+footer {
+  background: #070707;
+  padding: 30px 0;
+  text-align: center;
+  color: #888;
+  font-size: 11px;
+  line-height: 2;
+}
+
+footer strong { color: white; }
+
+@media(max-width: 800px) {
+  .services { grid-template-columns: repeat(2, 1fr); }
+  .about-grid { grid-template-columns: 1fr; }
+}
+
+@media(max-width: 550px) {
+  .links { display: none; }
+  .services, .projects { grid-template-columns: 1fr; }
+  .hero { min-height: 550px; }
+  .hero h1 { letter-spacing: -2px; }
+  section { padding: 65px 0; }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <nav class="container">
+    <a href="#inicio" class="logo">GB<span>DIGITAL</span>.</a>
+
+    <div class="links">
+      <a href="#inicio">INÍCIO</a>
+      <a href="#servicos">SERVIÇOS</a>
+      <a href="#projetos">PROJETOS</a>
+      <a href="#contato">CONTATO</a>
+    </div>
+
+    <a href="https://www.instagram.com/gbzin.filiad028/"
+       class="btn" target="_blank" rel="noopener">
+      FALAR NO PV
+    </a>
+  </nav>
+</header>
+
+<main>
+
+<section class="hero" id="inicio">
+  <div class="container">
+    <div class="hero-content">
+      <div class="tag">Desenvolvimento web</div>
+
+      <h1>SUA IDEIA.<br>MINHA <span>TECNOLOGIA.</span></h1>
+
+      <p>
+        Transformo ideias em experiências digitais.
+        Desenvolvo sites modernos, profissionais e responsivos
+        para empresas, empreendedores e projetos.
+      </p>
+
+      <a href="#servicos" class="btn">CONHEÇA MEUS SERVIÇOS</a>
+    </div>
+  </div>
+</section>
+
+<section id="servicos">
+  <div class="container">
+    <div class="heading">
+      <small>O QUE EU FAÇO</small>
+      <h2>SOLUÇÕES DIGITAIS PARA SEU NEGÓCIO</h2>
+      <p>
+        Desenvolvimento de soluções pensadas para apresentar
+        sua marca, divulgar seus produtos e fortalecer sua
+        presença no ambiente digital.
+      </p>
+    </div>
+
+    <div class="services">
+      <article class="service">
+        <div class="number">01</div>
+        <h3>Criação de sites</h3>
+        <p>Sites profissionais e personalizados para empresas, profissionais e pequenos negócios.</p>
+      </article>
+
+      <article class="service">
+        <div class="number">02</div>
+        <h3>Catálogos digitais</h3>
+        <p>Apresente produtos e serviços de maneira organizada, moderna e acessível.</p>
+      </article>
+
+      <article class="service">
+        <div class="number">03</div>
+        <h3>Sites responsivos</h3>
+        <p>Layout adaptado para celulares, tablets e computadores.</p>
+      </article>
+
+      <article class="service">
+        <div class="number">04</div>
+        <h3>Páginas comerciais</h3>
+        <p>Páginas de apresentação para divulgar sua empresa, marca e serviços.</p>
+      </article>
+
+      <article class="service">
+        <div class="number">05</div>
+        <h3>Manutenção de sites</h3>
+        <p>Atualizações, correções e melhorias para manter seu projeto funcionando.</p>
+      </article>
+
+      <article class="service">
+        <div class="number">06</div>
+        <h3>Soluções personalizadas</h3>
+        <p>Desenvolvimento de projetos digitais de acordo com as necessidades de cada cliente.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="about">
+  <div class="container about-grid">
+    <div class="about-image">
+      <img
+        src="https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=1000&q=85"
+        alt="Ambiente de desenvolvimento e tecnologia">
+    </div>
+
+    <div class="about-text">
+      <div class="tag">Sobre meu trabalho</div>
+      <h2>TECNOLOGIA COM <span>PROPÓSITO.</span></h2>
+
+      <p>
+        Trabalho com tecnologia e desenvolvimento de sistemas,
+        criando soluções digitais que ajudam negócios a apresentar
+        seus serviços e alcançar clientes na internet.
+      </p>
+
+      <p>
+        Cada projeto é desenvolvido considerando a identidade,
+        os objetivos e as necessidades de quem contrata.
+      </p>
+
+      <a href="https://www.instagram.com/gbzin.filiad028/"
+         class="btn" target="_blank" rel="noopener">
+        CONVERSAR PELO INSTAGRAM
+      </a>
+    </div>
+  </div>
+</section>
+
+<section id="projetos">
+  <div class="container">
+    <div class="heading">
+      <small>PORTFÓLIO</small>
+      <h2>PROJETOS DEMONSTRATIVOS</h2>
+      <p>
+        Exemplos de conceitos visuais que demonstram como
+        uma presença digital pode ser apresentada.
+      </p>
+    </div>
+
+    <div class="projects">
+      <article class="project">
+        <img
+          src="https://images.unsplash.com/photo-1558981806-ec527fa84c39?auto=format&fit=crop&w=900&q=85"
+          alt="Conceito de site para loja de motos">
+        <div class="project-info">
+          <small>PROJETO CONCEITUAL</small>
+          <h3>Site para loja de motocicletas</h3>
+          <p>
+            Uma vitrine digital com apresentação da empresa,
+            catálogo de motos e contato.
+          </p>
+        </div>
+      </article>
+
+      <article class="project">
+        <img
+          src="https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=900&q=85"
+          alt="Conceito de site empresarial">
+        <div class="project-info">
+          <small>PROJETO CONCEITUAL</small>
+          <h3>Site empresarial</h3>
+          <p>
+            Uma página moderna para apresentar serviços,
+            informações e canais de atendimento.
+          </p>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="budget">
+  <div class="container">
+    <div class="tag">Orçamentos personalizados</div>
+
+    <h2>CADA PROJETO É ÚNICO.</h2>
+
+    <p>
+      Os valores são definidos de acordo com o tipo de site,
+      funcionalidades, quantidade de páginas e necessidades
+      do projeto.
+      <strong>Solicite um orçamento personalizado, sem compromisso!</strong>
+    </p>
+
+    <a href="https://www.instagram.com/gbzin.filiad028/"
+       class="btn" target="_blank" rel="noopener">
+      SOLICITAR ORÇAMENTO
+    </a>
+  </div>
+</section>
+
+<section class="contact" id="contato">
+  <div class="container">
+    <h2>VAMOS TIRAR SUA IDEIA DO PAPEL?</h2>
+
+    <p>
+      Gostou do meu trabalho ou tem uma ideia de projeto?
+      Entre em contato comigo exclusivamente pelo Direct
+      do Instagram. Vamos conversar sobre sua ideia!
+    </p>
+
+    <a class="btn"
+       href="https://www.instagram.com/gbzin.filiad028/"
+       target="_blank" rel="noopener">
+      ✉ CHAMAR NO PV DO INSTAGRAM
+    </a>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="container">
+    <strong>GB DIGITAL.</strong>
+    <p>Desenvolvimento Web e Soluções Digitais</p>
+    <p>Atendimento exclusivamente pelo Instagram Direct.</p>
+    <p>
+      <a href="https://www.instagram.com/gbzin.filiad028/"
+         target="_blank" rel="noopener">
+        @gbzin.filiad028
+      </a>
+    </p>
+    <p>© <span id="year"></span> - Todos os direitos reservados.</p>
+  </div>
+</footer>
+
+<script>
+document.getElementById("year").textContent =
+  new Date().getFullYear();
+</script>
+
+</body>
+</html>
