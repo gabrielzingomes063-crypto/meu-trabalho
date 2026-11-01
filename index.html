@@ -4,38 +4,42 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Draw Battle - Duelo de Desenhos</title>
-<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<title>Draw Battle | Duelo de Desenhos</title>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+
 <style>
 *{box-sizing:border-box}
-body{margin:0;background:#10101c;color:#fff;font-family:Arial,sans-serif}
-header{text-align:center;padding:25px 10px}
-header h1{font-size:36px;color:#bd9aff;margin:0}
+body{margin:0;background:#11111e;color:#fff;font-family:Arial,sans-serif}
+header{text-align:center;padding:25px 12px}
+header h1{margin:0;color:#bd9aff;font-size:38px}
 header p{color:#aaa}
-main{width:min(850px,94%);margin:auto;padding-bottom:35px}
-.panel{background:#1d1d2e;border:1px solid #33334b;border-radius:18px;padding:22px;margin:15px 0}
+main{width:min(900px,94%);margin:auto;padding-bottom:40px}
+.panel{background:#1e1e30;border:1px solid #35354c;border-radius:18px;padding:24px;margin:16px 0}
 .center{text-align:center}
-input{width:100%;padding:14px;border:0;border-radius:10px;background:#303047;color:white;margin:8px 0;font-size:16px}
-button{padding:13px 17px;border:0;border-radius:10px;background:#9060ed;color:white;font-weight:bold;cursor:pointer;margin:4px}
-button:hover{filter:brightness(1.15)}
+input{display:block;width:100%;padding:14px;margin:10px 0;background:#303047;color:white;border:1px solid #45455d;border-radius:10px;font-size:16px}
+button{background:#9362ed;color:white;border:0;border-radius:10px;padding:13px 18px;margin:5px;font-weight:bold;cursor:pointer}
+button:hover{filter:brightness(1.12)}
 button:disabled{opacity:.4;cursor:not-allowed}
 .hidden{display:none!important}
-#status,#gameStatus{color:#c6aaff;min-height:24px}
-#code{font-size:32px;letter-spacing:5px;color:#c3a4ff;font-weight:bold}
-.players{display:flex;gap:10px;margin:20px 0}
-.player{background:#303047;border-radius:12px;padding:14px;flex:1;min-width:0}
-#timer{font-size:36px;color:#ffe17c;font-weight:bold;margin:10px}
-#reference{width:180px;height:150px;background:white;border-radius:12px;display:block;margin:12px auto}
-#canvas{display:block;width:100%;height:auto;background:white;border-radius:12px;touch-action:none;cursor:crosshair}
-.tools{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0}
-.colors{display:flex;gap:9px;align-items:center;flex-wrap:wrap;margin:12px 0}
-.color{width:30px;height:30px;border:3px solid white;border-radius:50%;padding:0}
-#result{font-size:25px;color:#ffe17c;margin:20px}
-small{color:#aaa}
-hr{border:0;border-top:1px solid #41415a;margin:20px 0}
+#message,#lobbyMessage,#gameMessage{color:#c5a8ff;min-height:24px}
+#roomCode{font-size:32px;letter-spacing:5px;color:#c5a8ff;font-weight:bold}
+.players{display:flex;gap:12px;margin:20px 0}
+.player{flex:1;min-width:0;background:#303047;padding:15px;border-radius:12px}
+.player small{color:#aaa}
+#timer{font-size:38px;font-weight:bold;color:#ffe17c;margin:12px}
+#reference{width:180px;height:150px;background:white;border-radius:10px;display:block;margin:12px auto}
+#canvas{display:block;width:100%;height:auto;background:white;border-radius:12px;touch-action:none}
+.tools,.colors{display:flex;gap:7px;flex-wrap:wrap;margin:12px 0}
+.color{width:30px;height:30px;padding:0;border:3px solid white;border-radius:50%}
+#result{font-size:26px;color:#ffe17c;margin:20px}
+hr{border:0;border-top:1px solid #44445a;margin:22px 0}
 </style>
 </head>
 <body>
+
 <header>
 <h1>🎨 DRAW BATTLE</h1>
 <p>Dois jogadores. Um desenho. Apenas um vencedor!</p>
@@ -44,35 +48,43 @@ hr{border:0;border-top:1px solid #41415a;margin:20px 0}
 <main>
 <section id="home" class="panel center">
 <h2>Entre na batalha!</h2>
-<p>Digite seu apelido para começar.</p>
+<p>Escolha um apelido para jogar.</p>
 <input id="nickname" maxlength="16" placeholder="Seu apelido">
 <button onclick="createRoom()">CRIAR SALA</button>
 <hr>
-<p>Já tem um código? Entre na sala do seu amigo.</p>
-<input id="joinCode" maxlength="30" placeholder="Código da sala">
+<p>Seu amigo já criou uma sala?</p>
+<input id="joinCode" maxlength="6" placeholder="Código da sala">
 <button onclick="joinRoom()">ENTRAR NA SALA</button>
-<p id="status"></p>
+<p id="message">Conectando ao servidor...</p>
 </section>
 
 <section id="lobby" class="panel center hidden">
 <h2>⚔️ Sala de batalha</h2>
-<p>Envie este código para seu amigo:</p>
-<div id="code">------</div>
+<p>Compartilhe este código com seu amigo:</p>
+<div id="roomCode">------</div>
 <button onclick="copyCode()">COPIAR CÓDIGO</button>
+
 <div class="players">
-<div class="player"><b id="p1">Jogador 1</b><p><small>CRIADOR</small></p></div>
-<div class="player"><b id="p2">Aguardando...</b><p><small>CONVIDADO</small></p></div>
+<div class="player">
+<h3 id="hostName">Jogador 1</h3>
+<small>CRIADOR DA SALA</small>
 </div>
-<p id="lobbyStatus">Aguardando o segundo jogador...</p>
+<div class="player">
+<h3 id="guestName">Aguardando...</h3>
+<small>CONVIDADO</small>
+</div>
+</div>
+
+<p id="lobbyMessage">Esperando o segundo jogador...</p>
 <button id="startButton" onclick="startGame()" disabled>COMEÇAR PARTIDA</button>
 </section>
 
 <section id="game" class="panel hidden">
 <div class="center">
 <h2>✏️ Hora de desenhar!</h2>
-<p>Reproduza o desenho abaixo antes que o tempo acabe.</p>
+<p>Reproduza o modelo abaixo.</p>
 <canvas id="reference" width="360" height="300"></canvas>
-<div id="prompt">Desenhe o modelo!</div>
+<div id="prompt">Desenhe o gato!</div>
 <div id="timer">90</div>
 </div>
 
@@ -81,6 +93,7 @@ hr{border:0;border-top:1px solid #41415a;margin:20px 0}
 <button onclick="setTool('eraser')">🧽 Borracha</button>
 <button onclick="clearCanvas()">🗑️ Limpar</button>
 </div>
+
 <div class="colors">
 <button class="color" style="background:#111" onclick="setColor('#111111')"></button>
 <button class="color" style="background:#e53935" onclick="setColor('#e53935')"></button>
@@ -89,179 +102,307 @@ hr{border:0;border-top:1px solid #41415a;margin:20px 0}
 <button class="color" style="background:#ff9800" onclick="setColor('#ff9800')"></button>
 <button class="color" style="background:#9c27b0" onclick="setColor('#9c27b0')"></button>
 </div>
+
 <canvas id="canvas" width="900" height="600"></canvas>
 <div class="center">
 <button id="finishButton" onclick="finishDrawing()">FINALIZAR DESENHO</button>
-<p id="gameStatus">Boa sorte!</p>
+<p id="gameMessage">Boa sorte!</p>
 </div>
 </section>
 
 <section id="results" class="panel center hidden">
-<h2>🏆 RESULTADO</h2>
+<h2>🏆 RESULTADO DA BATALHA</h2>
 <div id="result">Calculando...</div>
 <div class="players">
-<div class="player"><b id="resultName1">Jogador 1</b><p id="score1">--</p></div>
-<div class="player"><b id="resultName2">Jogador 2</b><p id="score2">--</p></div>
+<div class="player">
+<h3 id="resultHost">Jogador 1</h3>
+<p id="scoreHost">--</p>
+</div>
+<div class="player">
+<h3 id="resultGuest">Jogador 2</h3>
+<p id="scoreGuest">--</p>
+</div>
 </div>
 <p id="winner"></p>
-<button onclick="location.reload()">JOGAR NOVAMENTE</button>
+<button onclick="location.reload()">VOLTAR AO INÍCIO</button>
 </section>
 </main>
 
 <script>
-let peer=null, conn=null;
-let isHost=false, myName="", opponentName="";
-let roomCode="", started=false, finished=false;
-let timer=null, seconds=90, myDrawing=null;
-let receivedDrawing=null;
+// ==================================================
+// COLOQUE A CONFIGURAÇÃO REAL DO SEU FIREBASE AQUI
+// ==================================================
 
-const $=id=>document.getElementById(id);
-const canvas=$("canvas");
-const ctx=canvas.getContext("2d");
-const reference=$("reference");
-const rctx=reference.getContext("2d");
+const firebaseConfig = {
+  apiKey: "SUA_API_KEY",
+  authDomain: "SEU_PROJETO.firebaseapp.com",
+  databaseURL: "https://SEU_PROJETO-default-rtdb.firebaseio.com",
+  projectId: "SEU_PROJETO",
+  appId: "SEU_APP_ID"
+};
 
-function show(id){
-  ["home","lobby","game","results"].forEach(x=>$(x).classList.add("hidden"));
+// ==================================================
+
+let app, auth, db, user;
+let roomId = null;
+let roomRef = null;
+let isHost = false;
+let myName = "";
+let roomListener = null;
+let timerInterval = null;
+let submitted = false;
+let seconds = 90;
+let currentRoom = null;
+
+const $ = id => document.getElementById(id);
+
+function show(id) {
+  ["home","lobby","game","results"].forEach(name =>
+    $(name).classList.add("hidden")
+  );
   $(id).classList.remove("hidden");
 }
-function status(msg){$("status").textContent=msg}
-function randomCode(){return "DB"+Math.random().toString(36).substring(2,8).toUpperCase()}
-function getName(){return $("nickname").value.trim().slice(0,16)||"Jogador"}
 
-function makePeer(id){
-  return new Promise((resolve,reject)=>{
-    peer=new Peer(id,{
-      host:"0.peerjs.com",
-      port:443,
-      path:"/",
-      secure:true
-    });
-    peer.on("open",resolve);
-    peer.on("error",e=>reject(e));
-    peer.on("disconnected",()=>{
-      $("gameStatus").textContent="Conexão interrompida. Tentando reconectar...";
-      peer.reconnect();
-    });
-  });
+function setMessage(message) {
+  $("message").textContent = message;
 }
 
-async function createRoom(){
-  myName=getName();
-  isHost=true;
-  roomCode=randomCode();
-  status("Criando sala...");
-  try{
-    await makePeer(roomCode);
-    peer.on("connection",connection=>{
-      if(conn){connection.close();return}
-      conn=connection;
-      setupConnection();
-    });
-    $("code").textContent=roomCode;
-    $("p1").textContent=myName;
-    $("p2").textContent="Aguardando...";
-    $("lobbyStatus").textContent="Compartilhe o código com seu amigo.";
-    show("lobby");
-  }catch(e){
-    status("Não foi possível criar a sala: "+e.message);
+function randomCode() {
+  return Math.random().toString(36).substring(2,8).toUpperCase();
+}
+
+function getName() {
+  return $("nickname").value.trim().slice(0,16) || "Jogador";
+}
+
+// Inicialização do Firebase
+async function initialize() {
+  try {
+    if (
+      firebaseConfig.apiKey === "SUA_API_KEY" ||
+      firebaseConfig.projectId === "SEU_PROJETO" ||
+      !firebaseConfig.databaseURL ||
+      firebaseConfig.databaseURL.includes("SEU_PROJETO")
+    ) {
+      setMessage("Configure o Firebase antes de jogar.");
+      return;
+    }
+
+    app = firebase.initializeApp(firebaseConfig);
+    auth = firebase.auth();
+    db = firebase.database();
+
+    const credential = await auth.signInAnonymously();
+    user = credential.user;
+
+    setMessage("Conectado! Você já pode jogar.");
+  } catch (error) {
+    setMessage("Erro Firebase: " + error.message);
   }
 }
 
-async function joinRoom(){
-  myName=getName();
-  roomCode=$("joinCode").value.trim().toUpperCase();
-  if(!roomCode)return status("Digite o código da sala.");
-  isHost=false;
-  status("Conectando à sala...");
-  try{
-    await makePeer();
-    conn=peer.connect(roomCode,{reliable:true});
-    setupConnection();
-    conn.on("open",()=>{
-      send({type:"hello",name:myName});
-      $("p1").textContent="Criador da sala";
-      $("p2").textContent=myName;
-      $("code").textContent=roomCode;
-      $("lobbyStatus").textContent="Conectado! Esperando o criador iniciar.";
-      show("lobby");
+initialize();
+
+// Criar sala
+async function createRoom() {
+  if (!user) {
+    setMessage("A conexão ainda não está pronta. Verifique o Firebase.");
+    return;
+  }
+
+  myName = getName();
+  isHost = true;
+  roomId = randomCode();
+  roomRef = db.ref("rooms/" + roomId);
+
+  try {
+    await roomRef.set({
+      status: "waiting",
+      hostUid: user.uid,
+      createdAt: firebase.database.ServerValue.TIMESTAMP,
+      players: {
+        host: {
+          uid: user.uid,
+          name: myName,
+          submitted: false
+        }
+      }
     });
-  }catch(e){
-    status("Erro ao conectar: "+e.message);
+
+    openLobby();
+  } catch (error) {
+    setMessage("Não foi possível criar a sala: " + error.message);
   }
 }
 
-function setupConnection(){
-  conn.on("open",()=>{
-    if(isHost){
-      $("p2").textContent="Conectado!";
-      $("lobbyStatus").textContent="Seu amigo entrou na sala!";
-      $("startButton").disabled=false;
+// Entrar em sala
+async function joinRoom() {
+  if (!user) {
+    setMessage("A conexão ainda não está pronta. Verifique o Firebase.");
+    return;
+  }
+
+  myName = getName();
+  roomId = $("joinCode").value.trim().toUpperCase();
+
+  if (!/^[A-Z0-9]{6}$/.test(roomId)) {
+    setMessage("Digite um código válido de 6 caracteres.");
+    return;
+  }
+
+  roomRef = db.ref("rooms/" + roomId);
+  setMessage("Procurando sala...");
+
+  try {
+    const snapshot = await roomRef.once("value");
+
+    if (!snapshot.exists()) {
+      setMessage("Sala não encontrada. Confira o código.");
+      return;
     }
-  });
-  conn.on("data",data=>{
-    if(data.type==="hello"){
-      opponentName=data.name;
-      $("p2").textContent=opponentName;
-      $("lobbyStatus").textContent="Seu amigo está pronto!";
-      $("startButton").disabled=false;
+
+    const room = snapshot.val();
+
+    if (room.status !== "waiting") {
+      setMessage("Essa partida já começou ou terminou.");
+      return;
     }
-    if(data.type==="start"&&!isHost) beginGame();
-    if(data.type==="drawing"){
-      receivedDrawing=data.image;
-      if(isHost) calculateResults();
+
+    const guestRef = roomRef.child("players/guest");
+
+    const result = await guestRef.transaction(current => {
+      if (current === null) {
+        return {
+          uid: user.uid,
+          name: myName,
+          submitted: false
+        };
+      }
+      return;
+    });
+
+    if (!result.committed) {
+      setMessage("Essa sala já tem dois jogadores.");
+      return;
     }
-    if(data.type==="result"&&!isHost) displayResults(data);
+
+    isHost = false;
+    openLobby();
+
+  } catch (error) {
+    setMessage("Erro ao entrar: " + error.message);
+  }
+}
+
+// Abrir sala e acompanhar mudanças
+function openLobby() {
+  show("lobby");
+  $("roomCode").textContent = roomId;
+  $("lobbyMessage").textContent = "Conectando à sala...";
+
+  if (roomListener) roomRef.off("value", roomListener);
+
+  roomListener = snapshot => {
+    if (!snapshot.exists()) {
+      $("lobbyMessage").textContent = "A sala não existe mais.";
+      return;
+    }
+
+    currentRoom = snapshot.val();
+
+    const host = currentRoom.players?.host;
+    const guest = currentRoom.players?.guest;
+
+    $("hostName").textContent = host?.name || "Jogador 1";
+    $("guestName").textContent = guest?.name || "Aguardando...";
+
+    if (guest) {
+      $("lobbyMessage").textContent = "Os dois jogadores estão conectados!";
+    } else {
+      $("lobbyMessage").textContent = "Esperando o segundo jogador...";
+    }
+
+    $("startButton").disabled =
+      !isHost || !guest || currentRoom.status !== "waiting";
+
+    if (currentRoom.status === "playing") {
+      if ($("game").classList.contains("hidden")) {
+        beginGame();
+      }
+    }
+
+    if (currentRoom.status === "finished") {
+      displayResults(currentRoom);
+    }
+  };
+
+  roomRef.on("value", roomListener, error => {
+    $("lobbyMessage").textContent = "Erro na sala: " + error.message;
   });
-  conn.on("close",()=>{
-    $("gameStatus").textContent="Seu adversário saiu da sala.";
-    $("lobbyStatus").textContent="Conexão encerrada.";
-  });
-  conn.on("error",e=>{
-    $("gameStatus").textContent="Erro na conexão: "+e.message;
-  });
 }
 
-function send(data){
-  if(conn&&conn.open)conn.send(data);
+async function copyCode() {
+  try {
+    await navigator.clipboard.writeText(roomId);
+    alert("Código copiado!");
+  } catch {
+    alert("Código da sala: " + roomId);
+  }
 }
 
-function copyCode(){
-  navigator.clipboard.writeText(roomCode)
-    .then(()=>alert("Código copiado!"))
-    .catch(()=>alert("Código da sala: "+roomCode));
+// Iniciar partida
+async function startGame() {
+  if (!isHost || !currentRoom?.players?.guest) return;
+
+  try {
+    await roomRef.update({
+      status: "playing",
+      startedAt: Date.now(),
+      duration: 90
+    });
+  } catch (error) {
+    alert("Erro ao iniciar: " + error.message);
+  }
 }
 
-function startGame(){
-  if(!conn||!conn.open)return alert("Seu amigo ainda não está conectado.");
-  send({type:"start"});
-  beginGame();
-}
+// Desenho de referência: gato
+const canvas = $("canvas");
+const ctx = canvas.getContext("2d");
+const reference = $("reference");
+const rctx = reference.getContext("2d");
 
-function drawTarget(){
-  rctx.fillStyle="white";
+function drawTarget() {
+  rctx.fillStyle = "white";
   rctx.fillRect(0,0,360,300);
-  rctx.strokeStyle="#171717";
-  rctx.lineWidth=9;
-  rctx.lineCap="round";
-  rctx.lineJoin="round";
+  rctx.strokeStyle = "#171717";
+  rctx.lineWidth = 9;
+  rctx.lineCap = "round";
+  rctx.lineJoin = "round";
 
-  // Desenho de referência: gato
   rctx.beginPath();
   rctx.arc(180,100,57,0,Math.PI*2);
-  rctx.moveTo(139,65);rctx.lineTo(127,25);rctx.lineTo(164,51);
-  rctx.moveTo(197,51);rctx.lineTo(233,25);rctx.lineTo(221,65);
+  rctx.moveTo(139,65);
+  rctx.lineTo(127,25);
+  rctx.lineTo(164,51);
+  rctx.moveTo(197,51);
+  rctx.lineTo(233,25);
+  rctx.lineTo(221,65);
   rctx.stroke();
 
   rctx.beginPath();
   rctx.arc(160,95,5,0,Math.PI*2);
   rctx.arc(200,95,5,0,Math.PI*2);
-  rctx.fillStyle="#171717";rctx.fill();
+  rctx.fillStyle = "#171717";
+  rctx.fill();
 
   rctx.beginPath();
-  rctx.moveTo(173,115);rctx.lineTo(187,115);rctx.lineTo(180,123);
-  rctx.moveTo(180,123);rctx.quadraticCurveTo(160,145,149,125);
-  rctx.moveTo(180,123);rctx.quadraticCurveTo(200,145,211,125);
+  rctx.moveTo(173,115);
+  rctx.lineTo(187,115);
+  rctx.lineTo(180,123);
+  rctx.moveTo(180,123);
+  rctx.quadraticCurveTo(160,145,149,125);
+  rctx.moveTo(180,123);
+  rctx.quadraticCurveTo(200,145,211,125);
   rctx.stroke();
 
   rctx.beginPath();
@@ -275,149 +416,241 @@ function drawTarget(){
   rctx.stroke();
 
   rctx.beginPath();
-  rctx.moveTo(150,266);rctx.lineTo(145,280);
-  rctx.moveTo(210,266);rctx.lineTo(215,280);
+  rctx.moveTo(150,266);
+  rctx.lineTo(145,280);
+  rctx.moveTo(210,266);
+  rctx.lineTo(215,280);
   rctx.stroke();
 }
 
-function beginGame(){
-  if(started)return;
-  started=true;
-  finished=false;
-  receivedDrawing=null;
-  myDrawing=null;
-  seconds=90;
+function beginGame() {
+  if (!roomRef || $("game").classList.contains("hidden") === false) return;
+
+  submitted = false;
+  seconds = 90;
   clearCanvas();
   drawTarget();
-  $("timer").textContent=seconds;
-  $("gameStatus").textContent="Faça seu desenho!";
-  $("finishButton").disabled=false;
   show("game");
 
-  clearInterval(timer);
-  timer=setInterval(()=>{
+  $("timer").textContent = seconds;
+  $("gameMessage").textContent = "Faça seu desenho!";
+  $("finishButton").disabled = false;
+
+  clearInterval(timerInterval);
+
+  timerInterval = setInterval(() => {
     seconds--;
-    $("timer").textContent=seconds;
-    if(seconds<=0)finishDrawing();
-  },1000);
+    $("timer").textContent = seconds;
+
+    if (seconds <= 0) {
+      finishDrawing();
+    }
+  }, 1000);
 }
 
-function clearCanvas(){
-  ctx.fillStyle="white";
+// Ferramentas
+let color = "#111111";
+let tool = "pen";
+let drawing = false;
+let lastPoint = null;
+
+function clearCanvas() {
+  ctx.fillStyle = "white";
   ctx.fillRect(0,0,canvas.width,canvas.height);
 }
 
-let color="#111111",tool="pen",drawing=false,last=null;
+function setColor(value) {
+  color = value;
+  tool = "pen";
+}
 
-function setColor(c){color=c;tool="pen"}
-function setTool(t){tool=t}
+function setTool(value) {
+  tool = value;
+}
 
-function getPoint(e){
-  const r=canvas.getBoundingClientRect();
+function getPoint(event) {
+  const rect = canvas.getBoundingClientRect();
   return {
-    x:(e.clientX-r.left)*canvas.width/r.width,
-    y:(e.clientY-r.top)*canvas.height/r.height
+    x: (event.clientX - rect.left) * canvas.width / rect.width,
+    y: (event.clientY - rect.top) * canvas.height / rect.height
   };
 }
 
-canvas.addEventListener("pointerdown",e=>{
-  if(finished)return;
-  drawing=true;
-  last=getPoint(e);
-  canvas.setPointerCapture(e.pointerId);
+canvas.addEventListener("pointerdown", event => {
+  if (submitted) return;
+  drawing = true;
+  lastPoint = getPoint(event);
+  canvas.setPointerCapture(event.pointerId);
 });
-canvas.addEventListener("pointermove",e=>{
-  if(!drawing||finished)return;
-  const p=getPoint(e);
+
+canvas.addEventListener("pointermove", event => {
+  if (!drawing || submitted) return;
+
+  const point = getPoint(event);
+
   ctx.beginPath();
-  ctx.moveTo(last.x,last.y);
-  ctx.lineTo(p.x,p.y);
-  ctx.strokeStyle=tool==="eraser"?"white":color;
-  ctx.lineWidth=tool==="eraser"?38:8;
-  ctx.lineCap="round";
-  ctx.lineJoin="round";
+  ctx.moveTo(lastPoint.x,lastPoint.y);
+  ctx.lineTo(point.x,point.y);
+  ctx.strokeStyle = tool === "eraser" ? "white" : color;
+  ctx.lineWidth = tool === "eraser" ? 38 : 8;
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
   ctx.stroke();
-  last=p;
+
+  lastPoint = point;
 });
-canvas.addEventListener("pointerup",()=>drawing=false);
-canvas.addEventListener("pointercancel",()=>drawing=false);
 
-function finishDrawing(){
-  if(finished)return;
-  finished=true;
-  clearInterval(timer);
-  $("finishButton").disabled=true;
-  myDrawing=canvas.toDataURL("image/jpeg",0.65);
-  $("gameStatus").textContent="Desenho enviado! Esperando seu adversário...";
-  send({type:"drawing",image:myDrawing});
+canvas.addEventListener("pointerup", () => drawing = false);
+canvas.addEventListener("pointercancel", () => drawing = false);
 
-  if(isHost&&receivedDrawing)calculateResults();
-}
+// Pontuação aproximada por comparação de pixels
+function calculateScore(imageData) {
+  return new Promise(resolve => {
+    const image = new Image();
 
-function scoreImage(imageData){
-  return new Promise(resolve=>{
-    const img=new Image();
-    img.onload=()=>{
-      const size=48;
-      const a=document.createElement("canvas");
-      const b=document.createElement("canvas");
-      a.width=b.width=size;
-      a.height=b.height=size;
-      const ac=a.getContext("2d");
-      const bc=b.getContext("2d");
+    image.onload = () => {
+      const size = 48;
+      const a = document.createElement("canvas");
+      const b = document.createElement("canvas");
 
-      ac.fillStyle=bc.fillStyle="white";
+      a.width = b.width = size;
+      a.height = b.height = size;
+
+      const ac = a.getContext("2d");
+      const bc = b.getContext("2d");
+
+      ac.fillStyle = bc.fillStyle = "white";
       ac.fillRect(0,0,size,size);
       bc.fillRect(0,0,size,size);
-      ac.drawImage(img,0,0,size,size);
+
+      ac.drawImage(image,0,0,size,size);
       bc.drawImage(reference,0,0,size,size);
 
-      const A=ac.getImageData(0,0,size,size).data;
-      const B=bc.getImageData(0,0,size,size).data;
-      let intersection=0,union=0;
-      for(let i=0;i<A.length;i+=4){
-        const pa=A[i]<150;
-        const pb=B[i]<150;
-        if(pa&&pb)intersection++;
-        if(pa||pb)union++;
+      const A = ac.getImageData(0,0,size,size).data;
+      const B = bc.getImageData(0,0,size,size).data;
+
+      let intersection = 0;
+      let union = 0;
+
+      for (let i=0; i<A.length; i+=4) {
+        const pa = A[i] < 150;
+        const pb = B[i] < 150;
+        if (pa && pb) intersection++;
+        if (pa || pb) union++;
       }
-      resolve(union?Math.round(intersection/union*100):0);
+
+      resolve(union ? Math.round(intersection / union * 100) : 0);
     };
-    img.onerror=()=>resolve(0);
-    img.src=imageData;
+
+    image.onerror = () => resolve(0);
+    image.src = imageData;
   });
 }
 
-async function calculateResults(){
-  if(!isHost||!myDrawing||!receivedDrawing)return;
-  const myScore=await scoreImage(myDrawing);
-  const otherScore=await scoreImage(receivedDrawing);
-  const players={
-    type:"result",
-    name1:myName,
-    name2:opponentName||"Adversário",
-    score1:myScore,
-    score2:otherScore
+// Finalizar desenho
+async function finishDrawing() {
+  if (submitted || !roomRef) return;
+
+  submitted = true;
+  clearInterval(timerInterval);
+  $("finishButton").disabled = true;
+  $("gameMessage").textContent = "Calculando sua pontuação...";
+
+  try {
+    const imageData = canvas.toDataURL("image/jpeg",0.65);
+    const score = await calculateScore(imageData);
+
+    const slot = isHost ? "host" : "guest";
+
+    await roomRef.child("players/" + slot).update({
+      submitted: true,
+      score: score
+    });
+
+    $("gameMessage").textContent =
+      "Desenho enviado! Esperando seu adversário...";
+
+  } catch (error) {
+    submitted = false;
+    $("finishButton").disabled = false;
+    $("gameMessage").textContent = "Erro ao enviar: " + error.message;
+  }
+}
+
+// Verificar se ambos terminaram
+async function checkResults(room) {
+  const host = room.players?.host;
+  const guest = room.players?.guest;
+
+  if (!host?.submitted || !guest?.submitted) return;
+
+  const finalResult = {
+    status: "finished",
+    result: {
+      hostName: host.name,
+      guestName: guest.name,
+      hostScore: host.score,
+      guestScore: guest.score
+    }
   };
-  displayResults(players);
-  send(players);
+
+  if (room.status === "playing" && isHost) {
+    await roomRef.update(finalResult);
+  }
 }
 
-function displayResults(data){
-  clearInterval(timer);
+// Mostrar resultado
+function displayResults(room) {
+  const result = room.result;
+  if (!result) return;
+
+  clearInterval(timerInterval);
   show("results");
-  $("resultName1").textContent=data.name1;
-  $("resultName2").textContent=data.name2;
-  $("score1").textContent=data.score1+"% de semelhança";
-  $("score2").textContent=data.score2+"% de semelhança";
 
-  let result="🤝 Empate!";
-  if(data.score1>data.score2)result="🏆 "+data.name1+" venceu!";
-  if(data.score2>data.score1)result="🏆 "+data.name2+" venceu!";
+  $("resultHost").textContent = result.hostName;
+  $("resultGuest").textContent = result.guestName;
+  $("scoreHost").textContent = result.hostScore + "% de semelhança";
+  $("scoreGuest").textContent = result.guestScore + "% de semelhança";
 
-  $("result").textContent=result;
-  $("winner").textContent="Pontuação automática baseada na semelhança visual.";
+  let winner = "🤝 Empate!";
+
+  if (result.hostScore > result.guestScore) {
+    winner = "🏆 " + result.hostName + " venceu!";
+  }
+
+  if (result.guestScore > result.hostScore) {
+    winner = "🏆 " + result.guestName + " venceu!";
+  }
+
+  $("result").textContent = winner;
+  $("winner").textContent =
+    "A pontuação é uma estimativa automática de semelhança visual.";
 }
+
+// Acompanhar pontuação dos dois jogadores
+function watchResults() {
+  if (!roomRef) return;
+
+  roomRef.child("players").on("value", snapshot => {
+    const players = snapshot.val();
+    if (!players) return;
+
+    checkResults({
+      status: currentRoom?.status,
+      players: players
+    }).catch(error => {
+      $("gameMessage").textContent = "Erro no resultado: " + error.message;
+    });
+  });
+}
+
+// Ativar observador quando entrar no jogo
+const originalBeginGame = beginGame;
+beginGame = function() {
+  if (!$("game").classList.contains("hidden")) return;
+  originalBeginGame();
+  watchResults();
+};
 </script>
 </body>
 </html>
