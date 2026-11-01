@@ -15,8 +15,9 @@ h1{font-size:clamp(35px,8vw,65px);color:#ffca68;text-shadow:4px 4px #5a2521;text
 button{border:2px solid #fff8;border-radius:15px;background:#bd563b;color:white;font-weight:bold;font-size:18px;padding:15px 22px;cursor:pointer}
 #menu button{width:min(410px,88vw);min-height:60px}
 button:active{transform:scale(.96);filter:brightness(1.2)}
+button:disabled{opacity:.55}
 input{padding:15px;border-radius:12px;border:0;font-size:18px;text-align:center;width:min(410px,88vw)}
-#status{font-size:13px;color:#ffd18c;text-align:center;max-width:90vw}
+#status{font-size:13px;color:#ffd18c;text-align:center;max-width:90vw;min-height:18px}
 #hud{display:none;position:fixed;top:10px;left:12px;right:85px;color:white;text-shadow:2px 2px #21151b;font-weight:bold;justify-content:space-between;pointer-events:none;gap:8px}
 #exit{display:none;position:fixed;top:9px;right:9px;padding:11px 16px;z-index:3;font-size:14px}
 #controls{display:none;position:fixed;bottom:max(15px,env(safe-area-inset-bottom));left:0;right:0;justify-content:space-between;padding:0 18px;pointer-events:none}
@@ -34,10 +35,10 @@ input{padding:15px;border-radius:12px;border:0;font-size:18px;text-align:center;
 <div id="menu">
   <h1>STICKMAN BATTLE</h1>
   <p>Uma batalha de física e destruição!</p>
-  <button onclick="startGame(false)">JOGAR SOZINHO</button>
-  <button onclick="createRoom()">CRIAR SALA ONLINE</button>
+  <button id="soloBtn" onclick="startGame(false)">JOGAR SOZINHO</button>
+  <button id="createBtn" onclick="createRoom()">CRIAR SALA ONLINE</button>
   <input id="roomCode" maxlength="6" placeholder="CÓDIGO DA SALA">
-  <button onclick="joinRoom()">ENTRAR NA SALA</button>
+  <button id="joinBtn" onclick="joinRoom()">ENTRAR NA SALA</button>
   <div id="status">Conectando ao Firebase...</div>
 </div>
 
@@ -81,9 +82,22 @@ const firebaseConfig={
 
 let db=null,uid=null,room=null,online=false,roomId="";
 let authReady=false;
+let creating=false;
 
-function statusText(t){
- document.getElementById("status").textContent=t;
+function statusText(message){
+ document.getElementById("status").textContent=message;
+}
+
+function setOnlineButtons(disabled){
+ document.getElementById("createBtn").disabled=disabled;
+ document.getElementById("joinBtn").disabled=disabled;
+}
+
+function timeoutPromise(promise,ms,message){
+ return Promise.race([
+  promise,
+  new Promise((_,reject)=>setTimeout(()=>reject(new Error(message)),ms))
+ ]);
 }
 
 try{
@@ -94,17 +108,19 @@ try{
  .then(result=>{
    uid=result.user.uid;
    authReady=true;
-   statusText("Firebase conectado!");
+   statusText("Firebase conectado! Você já pode criar uma sala.");
  })
  .catch(error=>{
    statusText("Erro de autenticação: "+error.message);
+   console.error("Firebase Auth:",error);
  });
 }catch(error){
- statusText("Erro Firebase: "+error.message);
+ statusText("Erro ao iniciar Firebase: "+error.message);
+ console.error(error);
 }
 
 // ==========================================
-// CANVAS E CONFIGURAÇÕES
+// CANVAS
 // ==========================================
 const canvas=document.getElementById("game");
 const ctx=canvas.getContext("2d");
@@ -116,9 +132,7 @@ let camera=0,running=false,last=0;
 let keys={};
 let bullets=[],particles=[],weapons=[],debris=[];
 let remote={};
-let dropClock=0;
-let syncClock=0;
-let lastShotSync=0;
+let dropClock=0,syncClock=0;
 
 function resize(){
  W=innerWidth;
@@ -128,6 +142,7 @@ function resize(){
  canvas.height=H*D;
  ctx.setTransform(D,0,0,D,0,0);
  FLOOR=H-95;
+ updatePlatformHeights();
 }
 addEventListener("resize",resize);
 resize();
@@ -150,46 +165,34 @@ const gunList=[
  {name:"PLASMA",damage:19,speed:18,rate:180,color:"#53f2cb"}
 ];
 
-// ==========================================
-// JOGADOR
-// ==========================================
 const player={
  x:250,y:0,vx:0,vy:0,
- health:100,facing:1,
- grounded:false,
- weapon:null,lastShot:0,
- color:"#36d9ed",
- rag:false,ragTime:0,
- angle:0,
- hitFlash:0
+ health:100,facing:1,grounded:false,
+ weapon:null,lastShot:0,color:"#36d9ed",
+ rag:false,ragTime:0,angle:0,hitFlash:0
 };
 
+// ==========================================
+// CIDADE E PLATAFORMAS
+// ==========================================
 const platforms=[
- {x:180,y:0,w:210},
- {x:540,y:0,w:230},
- {x:950,y:0,w:200},
- {x:1320,y:0,w:250},
- {x:1740,y:0,w:210},
- {x:2100,y:0,w:230},
- {x:2520,y:0,w:260},
- {x:2940,y:0,w:220},
- {x:3320,y:0,w:260},
- {x:3720,y:0,w:220}
+ {x:180,y:0,w:210},{x:540,y:0,w:230},
+ {x:950,y:0,w:200},{x:1320,y:0,w:250},
+ {x:1740,y:0,w:210},{x:2100,y:0,w:230},
+ {x:2520,y:0,w:260},{x:2940,y:0,w:220},
+ {x:3320,y:0,w:260},{x:3720,y:0,w:220}
 ];
 
 function updatePlatformHeights(){
  const heights=[160,240,145,270,180,300,170,260,150,290];
  platforms.forEach((p,i)=>p.y=FLOOR-heights[i]);
 }
+updatePlatformHeights();
 
-// ==========================================
-// CIDADE
-// ==========================================
 const buildings=[];
 function makeCity(){
  buildings.length=0;
- let x=-30;
- let i=0;
+ let x=-30,i=0;
  while(x<WORLD){
   const w=175+Math.random()*125;
   const h=180+Math.random()*220;
@@ -198,18 +201,185 @@ function makeCity(){
    color:["#713d32","#874936","#59343b","#a75c3b","#633a36"][i%5],
    seed:Math.random()
   });
-  x+=w+8;
-  i++;
+  x+=w+8;i++;
  }
 }
 makeCity();
-updatePlatformHeights();
 
 // ==========================================
-// INICIAR E SAIR
+// CRIAR SALA ONLINE - CORRIGIDO
+// ==========================================
+async function createRoom(){
+ if(creating)return;
+
+ if(!db){
+  alert("Firebase não foi inicializado. Confira sua conexão.");
+  return;
+ }
+
+ if(!authReady||!uid){
+  alert("Aguarde o login anônimo do Firebase terminar.");
+  statusText("Aguardando autenticação...");
+  return;
+ }
+
+ creating=true;
+ setOnlineButtons(true);
+ statusText("Conectando ao banco de dados...");
+
+ const code=Math.random().toString(36).substring(2,8).toUpperCase();
+ const newRoom=db.ref("rooms/"+code);
+
+ try{
+  statusText("Testando acesso ao Realtime Database...");
+
+  await timeoutPromise(
+   newRoom.set({
+    created:Date.now(),
+    host:uid,
+    players:{},
+    shots:{},
+    events:{}
+   }),
+   12000,
+   "O banco de dados não respondeu em 12 segundos."
+  );
+
+  roomId=code;
+  room=newRoom;
+
+  statusText("Sala criada! Abrindo partida...");
+
+  document.getElementById("roomLabel").textContent="SALA: "+code;
+  startGame(true);
+  connectRoom();
+
+  alert("SALA CRIADA COM SUCESSO!\n\nCódigo da sala: "+code+"\n\nEnvie esse código para seu amigo.");
+
+ }catch(error){
+  console.error("Erro ao criar sala:",error);
+
+  let detail=error.message||"Erro desconhecido";
+  if(error.code)detail+=" ("+error.code+")";
+
+  statusText("Falha ao criar sala: "+detail);
+  alert("NÃO FOI POSSÍVEL CRIAR A SALA\n\n"+detail);
+
+  room=null;
+  roomId="";
+ }finally{
+  creating=false;
+  setOnlineButtons(false);
+ }
+}
+
+// ==========================================
+// ENTRAR EM SALA
+// ==========================================
+async function joinRoom(){
+ if(!db||!authReady||!uid){
+  alert("Aguarde o Firebase conectar.");
+  return;
+ }
+
+ const code=document.getElementById("roomCode").value.trim().toUpperCase();
+
+ if(!code){
+  alert("Digite o código da sala.");
+  return;
+ }
+
+ setOnlineButtons(true);
+ statusText("Procurando sala "+code+"...");
+
+ const target=db.ref("rooms/"+code);
+
+ try{
+  const snapshot=await timeoutPromise(
+   target.get(),
+   12000,
+   "Tempo esgotado procurando a sala."
+  );
+
+  if(!snapshot.exists()){
+   alert("Sala não encontrada. Confira o código.");
+   statusText("Sala não encontrada.");
+   return;
+  }
+
+  roomId=code;
+  room=target;
+  document.getElementById("roomLabel").textContent="SALA: "+code;
+
+  startGame(true);
+  connectRoom();
+
+  statusText("Entrou na sala "+code+"!");
+ }catch(error){
+  console.error("Erro ao entrar:",error);
+  statusText("Erro: "+error.message);
+  alert("Não foi possível entrar:\n"+error.message);
+ }finally{
+  setOnlineButtons(false);
+ }
+}
+
+// ==========================================
+// CONEXÃO E SINCRONIZAÇÃO
+// ==========================================
+function connectRoom(){
+ if(!room||!uid)return;
+
+ room.child("players/"+uid).onDisconnect().remove();
+
+ room.child("players").on("value",snapshot=>{
+  remote=snapshot.val()||{};
+  delete remote[uid];
+ });
+
+ room.child("shots").limitToLast(30).on("child_added",snapshot=>{
+  const shot=snapshot.val();
+  if(!shot||shot.owner===uid)return;
+
+  bullets.push({
+   x:shot.x,y:shot.y,vx:shot.vx,vy:shot.vy,
+   damage:shot.damage,color:shot.color,
+   owner:shot.owner,explosive:shot.explosive,
+   life:180
+  });
+ });
+
+ room.child("events").limitToLast(20).on("child_added",snapshot=>{
+  const event=snapshot.val();
+  if(event&&event.owner!==uid){
+   addExplosion(event.x,event.y,12,event.color||"#ffb347");
+  }
+ });
+
+ syncPlayer();
+}
+
+function syncPlayer(){
+ if(!online||!room||!uid)return;
+
+ room.child("players/"+uid).update({
+  x:player.x,y:player.y,
+  vx:player.vx,vy:player.vy,
+  health:player.health,
+  facing:player.facing,
+  color:player.color,
+  weapon:player.weapon?player.weapon.name:"",
+  rag:player.rag,
+  updated:Date.now()
+ }).catch(error=>console.error("Erro ao sincronizar:",error));
+}
+
+// ==========================================
+// JOGO
 // ==========================================
 function startGame(isOnline){
  online=isOnline;
+
  player.x=250;
  player.y=FLOOR-70;
  player.vx=0;
@@ -217,7 +387,7 @@ function startGame(isOnline){
  player.health=100;
  player.weapon=null;
  player.rag=false;
- player.hitFlash=0;
+ player.angle=0;
 
  bullets=[];
  particles=[];
@@ -231,13 +401,14 @@ function startGame(isOnline){
  for(let i=0;i<9;i++)dropWeapon();
 
  running=true;
+ last=0;
+
  document.getElementById("menu").style.display="none";
  document.getElementById("hud").style.display="flex";
  document.getElementById("controls").style.display="flex";
  document.getElementById("exit").style.display="block";
  document.getElementById("hint").style.display="block";
 
- last=0;
  requestAnimationFrame(loop);
 }
 
@@ -245,7 +416,7 @@ function backMenu(){
  running=false;
 
  if(room&&uid){
-  room.child("players/"+uid).remove();
+  room.child("players/"+uid).remove().catch(()=>{});
   room.child("players").off();
   room.child("shots").off();
   room.child("events").off();
@@ -265,133 +436,13 @@ function backMenu(){
 }
 
 // ==========================================
-// CRIAR E ENTRAR EM SALAS
-// ==========================================
-async function createRoom(){
- if(!db||!authReady){
-  alert("Aguarde a conexão com o Firebase.");
-  return;
- }
-
- const code=Math.random().toString(36).substring(2,8).toUpperCase();
- const newRoom=db.ref("rooms/"+code);
-
- try{
-  await newRoom.set({
-   created:Date.now(),
-   players:{},
-   shots:{},
-   events:{}
-  });
-
-  roomId=code;
-  room=newRoom;
-  document.getElementById("roomLabel").textContent="SALA: "+code;
-  startGame(true);
-  connectRoom();
-
-  alert("Sala criada! Compartilhe este código: "+code);
- }catch(error){
-  alert("Não foi possível criar a sala: "+error.message);
- }
-}
-
-async function joinRoom(){
- if(!db||!authReady){
-  alert("Aguarde a conexão com o Firebase.");
-  return;
- }
-
- const code=document.getElementById("roomCode").value.trim().toUpperCase();
-
- if(!code){
-  alert("Digite o código da sala.");
-  return;
- }
-
- const target=db.ref("rooms/"+code);
-
- try{
-  const snap=await target.get();
-
-  if(!snap.exists()){
-   alert("Essa sala não existe.");
-   return;
-  }
-
-  roomId=code;
-  room=target;
-  document.getElementById("roomLabel").textContent="SALA: "+code;
-
-  startGame(true);
-  connectRoom();
- }catch(error){
-  alert("Erro ao entrar na sala: "+error.message);
- }
-}
-
-function connectRoom(){
- if(!room||!uid)return;
-
- room.child("players/"+uid).onDisconnect().remove();
-
- room.child("players").on("value",snapshot=>{
-  remote=snapshot.val()||{};
-  delete remote[uid];
- });
-
- room.child("shots").limitToLast(30).on("child_added",snapshot=>{
-  const shot=snapshot.val();
-  if(!shot||shot.owner===uid)return;
-
-  bullets.push({
-   x:shot.x,y:shot.y,
-   vx:shot.vx,vy:shot.vy,
-   damage:shot.damage,
-   color:shot.color,
-   owner:shot.owner,
-   explosive:shot.explosive,
-   life:180
-  });
- });
-
- room.child("events").limitToLast(20).on("child_added",snapshot=>{
-  const event=snapshot.val();
-  if(!event||event.owner===uid)return;
-  if(event.type==="hit"){
-   addExplosion(event.x,event.y,12,event.color||"#ffb347");
-  }
- });
-}
-
-function syncPlayer(){
- if(!online||!room||!uid)return;
-
- room.child("players/"+uid).update({
-  x:player.x,
-  y:player.y,
-  vx:player.vx,
-  vy:player.vy,
-  health:player.health,
-  facing:player.facing,
-  color:player.color,
-  weapon:player.weapon?player.weapon.name:"",
-  rag:player.rag,
-  updated:Date.now()
- }).catch(()=>{});
-}
-
-// ==========================================
 // CONTROLES
 // ==========================================
 addEventListener("keydown",e=>{
  keys[e.key.toLowerCase()]=true;
  if([" ","ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].includes(e.key))e.preventDefault();
 });
-
-addEventListener("keyup",e=>{
- keys[e.key.toLowerCase()]=false;
-});
+addEventListener("keyup",e=>keys[e.key.toLowerCase()]=false);
 
 function bindButton(id,key){
  const button=document.getElementById(id);
@@ -399,22 +450,19 @@ function bindButton(id,key){
  function down(e){
   e.preventDefault();
   keys[key]=true;
-  button.setPointerCapture?.(e.pointerId);
-  button.style.filter="brightness(1.5)";
+  button.classList.add("active");
+  try{button.setPointerCapture(e.pointerId)}catch(_){}
  }
-
  function up(e){
   e.preventDefault();
   keys[key]=false;
-  button.style.filter="";
+  button.classList.remove("active");
  }
-
  button.addEventListener("pointerdown",down);
  button.addEventListener("pointerup",up);
  button.addEventListener("pointercancel",up);
  button.addEventListener("lostpointercapture",up);
 }
-
 bindButton("left","a");
 bindButton("right","d");
 bindButton("jump","w");
@@ -425,12 +473,9 @@ bindButton("fire","shoot");
 // ==========================================
 function dropWeapon(){
  const gun=gunList[Math.floor(Math.random()*gunList.length)];
-
  weapons.push({
   x:200+Math.random()*(WORLD-400),
   y:FLOOR-250-Math.random()*150,
-  vx:(Math.random()-.5)*2,
-  vy:0,
   gun
  });
 }
@@ -438,7 +483,6 @@ function dropWeapon(){
 function collectWeapons(){
  for(let i=weapons.length-1;i>=0;i--){
   const w=weapons[i];
-
   if(Math.abs(player.x-w.x)<38&&Math.abs(player.y+30-w.y)<55){
    player.weapon=w.gun;
    weapons.splice(i,1);
@@ -455,7 +499,6 @@ function shoot(){
 
  const gun=player.weapon;
  const now=Date.now();
-
  if(now-player.lastShot<gun.rate)return;
  player.lastShot=now;
 
@@ -481,78 +524,34 @@ function shoot(){
 
   if(online&&room&&uid){
    room.child("shots").push({
-    x:shot.x,y:shot.y,
-    vx:shot.vx,vy:shot.vy,
-    damage:shot.damage,
-    color:shot.color,
-    owner:uid,
-    explosive:shot.explosive
-   }).catch(()=>{});
+    x:shot.x,y:shot.y,vx:shot.vx,vy:shot.vy,
+    damage:shot.damage,color:shot.color,
+    owner:uid,explosive:shot.explosive
+   }).catch(error=>console.error("Erro ao enviar tiro:",error));
   }
  }
-
- player.vx-=player.facing*(gun.damage>40?2.5:0.7);
+ player.vx-=player.facing*(gun.damage>40?2.5:.7);
  addParticles(player.x+player.facing*27,player.y+28,4,gun.color);
 }
 
-function updateBullets(step){
- for(let i=bullets.length-1;i>=0;i--){
-  const b=bullets[i];
-
-  b.x+=b.vx*step;
-  b.y+=b.vy*step;
-  b.life--;
-
-  if(b.explosive)b.vy+=0.12*step;
-
-  if(b.life<=0||b.x<0||b.x>WORLD||b.y>H+300){
-   bullets.splice(i,1);
-   continue;
-  }
-
-  // Dano em jogadores online
-  if(online&&b.owner===uid){
-   for(const id in remote){
-    const target=remote[id];
-    if(!target||target.health<=0)continue;
-
-    if(Math.abs(b.x-target.x-15)<25&&Math.abs(b.y-target.y-30)<38){
-     const newHealth=Math.max(0,(target.health||100)-b.damage);
-
-     room.child("players/"+id+"/health").set(newHealth).catch(()=>{});
-
-     if(b.explosive)addExplosion(b.x,b.y,28,b.color);
-
-     room.child("events").push({
-      type:"hit",owner:uid,x:b.x,y:b.y,color:b.color
-     });
-
-     bullets.splice(i,1);
-     break;
-    }
-   }
-  }
- }
-}
-
 // ==========================================
-// FÍSICA E RAGDOLL SIMPLIFICADO
+// FÍSICA
 // ==========================================
 function physics(dt){
  const step=Math.min(dt/16.67,2);
 
  if(player.rag){
   player.ragTime-=dt;
-  player.vy+=0.55*step;
+  player.vy+=.55*step;
   player.x+=player.vx*step;
   player.y+=player.vy*step;
-  player.angle+=0.12*step;
-  player.vx*=0.985;
+  player.angle+=.12*step;
+  player.vx*=.985;
 
   if(player.y+62>=FLOOR){
    player.y=FLOOR-62;
-   player.vy*=-0.22;
-   player.vx*=0.75;
+   player.vy*=-.22;
+   player.vx*=.75;
   }
 
   if(player.ragTime<=0){
@@ -565,15 +564,15 @@ function physics(dt){
  }
 
  if(keys.a||keys.arrowleft){
-  player.vx-=0.8*step;
+  player.vx-=.8*step;
   player.facing=-1;
  }
  if(keys.d||keys.arrowright){
-  player.vx+=0.8*step;
+  player.vx+=.8*step;
   player.facing=1;
  }
 
- player.vx*=Math.pow(0.84,step);
+ player.vx*=Math.pow(.84,step);
  player.vx=Math.max(-7,Math.min(7,player.vx));
 
  if((keys.w||keys.arrowup||keys[" "])&&player.grounded){
@@ -583,10 +582,8 @@ function physics(dt){
 
  if(keys.shoot||keys.j)shoot();
 
- player.vy+=0.58*step;
- player.vy=Math.min(player.vy,17);
-
  const oldBottom=player.y+62;
+ player.vy=Math.min(player.vy+.58*step,17);
  player.x+=player.vx*step;
  player.x=Math.max(0,Math.min(WORLD-30,player.x));
  player.y+=player.vy*step;
@@ -618,8 +615,6 @@ function physics(dt){
   dropWeapon();
   dropClock=0;
  }
-
- player.hitFlash=Math.max(0,player.hitFlash-dt);
 }
 
 // ==========================================
@@ -629,14 +624,9 @@ function addParticles(x,y,amount,color){
  for(let i=0;i<amount;i++){
   const a=Math.random()*Math.PI*2;
   const speed=1+Math.random()*6;
-
   particles.push({
-   x,y,
-   vx:Math.cos(a)*speed,
-   vy:Math.sin(a)*speed,
-   life:25+Math.random()*35,
-   size:2+Math.random()*5,
-   color
+   x,y,vx:Math.cos(a)*speed,vy:Math.sin(a)*speed,
+   life:25+Math.random()*35,size:2+Math.random()*5,color
   });
  }
 }
@@ -647,11 +637,8 @@ function addExplosion(x,y,amount,color){
 
  for(let i=0;i<8;i++){
   debris.push({
-   x,y,
-   vx:(Math.random()-.5)*12,
-   vy:-Math.random()*10,
-   life:80,
-   size:4+Math.random()*7
+   x,y,vx:(Math.random()-.5)*12,
+   vy:-Math.random()*10,life:80,size:4+Math.random()*7
   });
  }
 }
@@ -661,8 +648,8 @@ function updateEffects(step){
   const p=particles[i];
   p.x+=p.vx*step;
   p.y+=p.vy*step;
-  p.vy+=0.13*step;
-  p.vx*=0.98;
+  p.vy+=.13*step;
+  p.vx*=.98;
   p.life-=step;
   if(p.life<=0)particles.splice(i,1);
  }
@@ -671,14 +658,54 @@ function updateEffects(step){
   const p=debris[i];
   p.x+=p.vx*step;
   p.y+=p.vy*step;
-  p.vy+=0.4*step;
+  p.vy+=.4*step;
   p.life-=step;
   if(p.y>FLOOR-5){
    p.y=FLOOR-5;
-   p.vy*=-0.3;
-   p.vx*=0.7;
+   p.vy*=-.3;
+   p.vx*=.7;
   }
   if(p.life<=0)debris.splice(i,1);
+ }
+}
+
+// ==========================================
+// ATUALIZAR PROJÉTEIS E DANO
+// ==========================================
+function updateBullets(step){
+ for(let i=bullets.length-1;i>=0;i--){
+  const b=bullets[i];
+  b.x+=b.vx*step;
+  b.y+=b.vy*step;
+  b.life--;
+  if(b.explosive)b.vy+=.12*step;
+
+  if(b.life<=0||b.x<0||b.x>WORLD||b.y>H+300){
+   bullets.splice(i,1);
+   continue;
+  }
+
+  if(online&&b.owner===uid){
+   for(const id in remote){
+    const target=remote[id];
+    if(!target||target.health<=0)continue;
+
+    if(Math.abs(b.x-target.x-15)<25&&Math.abs(b.y-target.y-30)<38){
+     const newHealth=Math.max(0,(target.health||100)-b.damage);
+
+     room.child("players/"+id+"/health").set(newHealth).catch(()=>{});
+
+     if(b.explosive)addExplosion(b.x,b.y,28,b.color);
+
+     room.child("events").push({
+      type:"hit",owner:uid,x:b.x,y:b.y,color:b.color
+     }).catch(()=>{});
+
+     bullets.splice(i,1);
+     break;
+    }
+   }
+  }
  }
 }
 
@@ -693,16 +720,9 @@ function drawSky(){
  ctx.fillStyle=g;
  ctx.fillRect(0,0,W,H);
 
- // Sol
  ctx.fillStyle="#ffc66b";
  ctx.beginPath();
  ctx.arc(W*.75,H*.27,Math.min(W,H)*.13,0,Math.PI*2);
- ctx.fill();
-
- // Brilho do sol
- ctx.fillStyle="#ffdb8b33";
- ctx.beginPath();
- ctx.arc(W*.75,H*.27,Math.min(W,H)*.2,0,Math.PI*2);
  ctx.fill();
 }
 
@@ -713,7 +733,6 @@ function drawBuildings(){
 
   ctx.fillStyle=b.color;
   ctx.fillRect(x,b.y,b.w,b.h);
-
   ctx.fillStyle="#432b30";
   ctx.fillRect(x,b.y,b.w,8);
 
@@ -724,8 +743,7 @@ function drawBuildings(){
    for(let r=0;r<rows;r++){
     const wx=x+12+c*((b.w-25)/cols);
     const wy=b.y+22+r*42;
-
-    ctx.fillStyle=(Math.sin(c*12+r*4+b.seed*20)>0.15)?"#f9b65b":"#38252d";
+    ctx.fillStyle=Math.sin(c*12+r*4+b.seed*20)>.15?"#f9b65b":"#38252d";
     ctx.fillRect(wx,wy,19,27);
     ctx.strokeStyle="#291e28";
     ctx.lineWidth=2;
@@ -733,7 +751,6 @@ function drawBuildings(){
    }
   }
 
-  // Telhado
   ctx.fillStyle="#33232a";
   ctx.fillRect(x-5,b.y-7,b.w+10,8);
  }
@@ -743,7 +760,6 @@ function drawPlatforms(){
  for(const p of platforms){
   const x=p.x-camera;
   if(x+p.w<0||x>W)continue;
-
   ctx.fillStyle="#e6a65b";
   ctx.fillRect(x,p.y,p.w,12);
   ctx.fillStyle="#60392f";
@@ -753,25 +769,16 @@ function drawPlatforms(){
  }
 }
 
-function drawFloor(){
- ctx.fillStyle="#462d2c";
- ctx.fillRect(0,FLOOR,W,H-FLOOR);
- ctx.fillStyle="#d78b48";
- ctx.fillRect(0,FLOOR,W,8);
- ctx.fillStyle="#271d24";
- ctx.fillRect(0,FLOOR+8,W,5);
-}
-
 function drawCity(){
  drawSky();
  drawBuildings();
  drawPlatforms();
- drawFloor();
+ ctx.fillStyle="#462d2c";
+ ctx.fillRect(0,FLOOR,W,H-FLOOR);
+ ctx.fillStyle="#d78b48";
+ ctx.fillRect(0,FLOOR,W,8);
 }
 
-// ==========================================
-// PERSONAGENS
-// ==========================================
 function drawStickman(x,y,color,facing,isPlayer,rag,angle){
  ctx.save();
  ctx.translate(x-camera+15,y+31);
@@ -783,22 +790,17 @@ function drawStickman(x,y,color,facing,isPlayer,rag,angle){
  ctx.lineCap="round";
  ctx.lineJoin="round";
 
- if(rag){
-  ctx.rotate(.3);
- }
+ if(rag)ctx.rotate(.3);
 
- // Cabeça
  ctx.beginPath();
  ctx.arc(0,-23,10,0,Math.PI*2);
  ctx.stroke();
 
- // Corpo
  ctx.beginPath();
  ctx.moveTo(0,-13);
  ctx.lineTo(0,13);
  ctx.stroke();
 
- // Braços
  ctx.beginPath();
  ctx.moveTo(0,-8);
  ctx.lineTo(-13,-1+swing);
@@ -808,7 +810,6 @@ function drawStickman(x,y,color,facing,isPlayer,rag,angle){
  ctx.lineTo(19,5-swing);
  ctx.stroke();
 
- // Pernas
  ctx.beginPath();
  ctx.moveTo(0,13);
  ctx.lineTo(-10,31+swing);
@@ -831,11 +832,12 @@ function drawStickman(x,y,color,facing,isPlayer,rag,angle){
 }
 
 function drawPlayers(){
- drawStickman(player.x,player.y,player.hitFlash?"#ffffff":player.color,player.facing,true,player.rag,player.angle);
+ drawStickman(player.x,player.y,player.hitFlash?"#fff":player.color,player.facing,true,player.rag,player.angle);
 
  for(const id in remote){
   const p=remote[id];
   if(!p||typeof p.x!=="number")continue;
+
   drawStickman(p.x,p.y,p.color||"#ff5555",p.facing||1,false,p.rag,false);
 
   ctx.fillStyle="#fff";
@@ -849,9 +851,6 @@ function drawPlayers(){
  }
 }
 
-// ==========================================
-// DESENHO DE ARMAS, TIROS E EFEITOS
-// ==========================================
 function drawWeapons(){
  for(const w of weapons){
   const x=w.x-camera;
@@ -860,13 +859,11 @@ function drawWeapons(){
   ctx.save();
   ctx.translate(x,w.y);
   ctx.rotate(Math.sin(performance.now()/200)*.12);
-
   ctx.fillStyle=w.gun.color;
   ctx.fillRect(-15,-5,30,10);
   ctx.fillRect(5,-9,8,5);
   ctx.fillStyle="#211c24";
   ctx.fillRect(-12,4,7,8);
-
   ctx.restore();
 
   ctx.fillStyle="#fff";
@@ -926,14 +923,13 @@ function loop(time){
  updateBullets(Math.min(dt/16.67,2));
  updateEffects(Math.min(dt/16.67,2));
 
- camera=player.x-W/2;
- camera=Math.max(0,Math.min(WORLD-W,camera));
+ camera=Math.max(0,Math.min(WORLD-W,player.x-W/2));
 
  document.getElementById("life").textContent="VIDA: "+Math.max(0,Math.floor(player.health));
  document.getElementById("weaponLabel").textContent="ARMA: "+(player.weapon?player.weapon.name:"NENHUMA");
 
  syncClock+=dt;
- if(online&&syncClock>=70){
+ if(online&&syncClock>=100){
   syncPlayer();
   syncClock=0;
  }
@@ -942,13 +938,11 @@ function loop(time){
 
  if(player.health<=0){
   player.health=0;
-  player.rag=true;
-  player.ragTime=1000;
   running=false;
   setTimeout(()=>{
    alert("Você foi derrotado!");
    backMenu();
-  },500);
+  },300);
   return;
  }
 
