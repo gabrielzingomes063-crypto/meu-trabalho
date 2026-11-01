@@ -3,134 +3,113 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Draw Battle - Duelo de Desenhos</title>
-
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Stickman Battle</title>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
-
 <style>
 *{box-sizing:border-box}
-body{margin:0;background:#11111e;color:white;font-family:Arial,sans-serif}
-header{text-align:center;padding:28px 12px}
-header h1{font-size:38px;color:#bd9aff;margin:0}
-header p{color:#aaa}
-main{width:min(900px,94%);margin:auto;padding-bottom:40px}
-.panel{background:#1e1e30;border:1px solid #35354c;border-radius:18px;padding:25px;margin:18px 0}
+body{margin:0;background:#10111c;color:white;font-family:Arial}
+header{text-align:center;padding:22px}
+h1{color:#b99aff;font-size:36px;margin:5px}
+main{max-width:950px;margin:auto;padding:12px}
+.panel{background:#202135;border:1px solid #383951;border-radius:16px;padding:22px;margin:14px 0}
 .center{text-align:center}
 .hidden{display:none!important}
-input{display:block;width:100%;padding:15px;margin:12px 0;background:#303047;color:white;border:1px solid #45455d;border-radius:11px;font-size:17px}
-button{background:#9362ed;color:white;border:0;border-radius:10px;padding:14px 20px;margin:5px;font-size:15px;font-weight:bold;cursor:pointer}
-button:hover{filter:brightness(1.15)}
-button:disabled{opacity:.45;cursor:not-allowed}
-#message,#lobbyMessage,#gameMessage{color:#c5a8ff;min-height:24px}
-#roomCode{font-size:35px;letter-spacing:6px;color:#c5a8ff;font-weight:bold;margin:15px}
-.players{display:flex;gap:12px;margin:20px 0}
-.player{flex:1;background:#303047;padding:15px;border-radius:12px;overflow-wrap:anywhere}
-.player small{color:#aaa}
-hr{border:0;border-top:1px solid #44445a;margin:24px 0}
-#timer{font-size:40px;color:#ffe17c;font-weight:bold;margin:12px}
-#reference{width:180px;max-width:100%;height:auto;background:white;border-radius:10px;display:block;margin:12px auto}
-#canvas{width:100%;height:auto;background:white;border-radius:12px;display:block;touch-action:none}
-.tools,.colors{display:flex;gap:7px;flex-wrap:wrap;margin:12px 0}
-.color{width:34px;height:34px;padding:0;border:3px solid white;border-radius:50%}
-#result{font-size:26px;color:#ffe17c;margin:20px 0}
+input{width:100%;padding:14px;background:#303249;color:white;border:1px solid #50516b;border-radius:9px;margin:8px 0;font-size:16px}
+button{border:0;background:#9667ef;color:white;padding:13px 18px;border-radius:9px;font-weight:bold;cursor:pointer;margin:4px}
+button:disabled{opacity:.5}
+#status{color:#c8aaff;min-height:25px}
+#code{font-size:34px;color:#c8aaff;letter-spacing:6px}
+#weaponCanvas{background:white;width:100%;max-width:500px;border-radius:10px;touch-action:none}
+#arena{width:100%;background:#e9e9f1;border-radius:12px;display:block}
+.healthrow{display:flex;gap:15px;margin:12px 0}
+.healthbox{flex:1;background:#303249;padding:10px;border-radius:10px}
+.bar{height:15px;background:#555;border-radius:20px;overflow:hidden;margin-top:8px}
+.fill{height:100%;background:#40d77b;width:100%;transition:width .2s}
+#controls{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin:12px}
+#controls button{min-width:85px;font-size:18px}
+small{color:#aaa}
 </style>
 </head>
-
 <body>
 <header>
-<h1>🎨 DRAW BATTLE</h1>
-<p>Dois jogadores. Um desenho. Apenas um vencedor!</p>
+<h1>⚔️ STICKMAN BATTLE</h1>
+<p>Desenhe sua arma. Entre na arena. Derrote seu adversário!</p>
 </header>
 
 <main>
 <section id="home" class="panel center">
-<h2>Entre na batalha!</h2>
-<p>Escolha um apelido para jogar.</p>
-<input id="nickname" maxlength="16" placeholder="Seu apelido">
-<button id="createButton" onclick="createRoom()">CRIAR SALA</button>
+<h2>Entrar na batalha</h2>
+<input id="nickname" maxlength="15" placeholder="Seu nome">
+<button onclick="createRoom()">CRIAR SALA</button>
 <hr>
-<p>Seu amigo já criou uma sala?</p>
-<input id="joinCode" maxlength="6" placeholder="Código da sala">
-<button id="joinButton" onclick="joinRoom()">ENTRAR NA SALA</button>
-<p id="message">Conectando ao servidor...</p>
+<input id="roomInput" maxlength="6" placeholder="Código da sala">
+<button onclick="joinRoom()">ENTRAR NA SALA</button>
+<p id="status">Conectando...</p>
 </section>
 
 <section id="lobby" class="panel center hidden">
-<h2>⚔️ Sala de batalha</h2>
-<p>Compartilhe este código com seu amigo:</p>
-<div id="roomCode">------</div>
+<h2>Sua sala</h2>
+<p>Compartilhe o código com seu adversário:</p>
+<div id="code">------</div>
 <button onclick="copyCode()">COPIAR CÓDIGO</button>
-
-<div class="players">
-<div class="player">
-<h3 id="hostName">Jogador 1</h3>
-<small>CRIADOR DA SALA</small>
-</div>
-<div class="player">
-<h3 id="guestName">Aguardando...</h3>
-<small>CONVIDADO</small>
-</div>
-</div>
-
-<p id="lobbyMessage">Esperando o segundo jogador...</p>
-<button id="startButton" onclick="startGame()" disabled>COMEÇAR PARTIDA</button>
+<h3 id="players">Esperando adversário...</h3>
+<p id="lobbyStatus"></p>
+<button id="goWeapon" onclick="openWeapon()" disabled>CRIAR MINHA ARMA</button>
 </section>
 
-<section id="game" class="panel hidden">
-<div class="center">
-<h2>✏️ Hora de desenhar!</h2>
-<p>Observe o modelo e tente reproduzi-lo da melhor maneira!</p>
-<canvas id="reference" width="360" height="300"></canvas>
-<div id="prompt">Desenhe o gato!</div>
-<div id="timer">90</div>
+<section id="weapon" class="panel center hidden">
+<h2>🎨 Desenhe sua arma</h2>
+<p>Use o mouse ou o dedo para desenhar. Vale espada, machado, martelo, lança...</p>
+<canvas id="weaponCanvas" width="500" height="220"></canvas>
+<div>
+<button onclick="clearWeapon()">APAGAR</button>
+<button onclick="saveWeapon()">EQUIPAR ARMA</button>
 </div>
-
-<div class="tools">
-<button onclick="setTool('pen')">✏️ Pincel</button>
-<button onclick="setTool('eraser')">🧽 Borracha</button>
-<button onclick="clearCanvas()">🗑️ Limpar</button>
-</div>
-
-<div class="colors">
-<button class="color" style="background:#111" onclick="setColor('#111111')"></button>
-<button class="color" style="background:#e53935" onclick="setColor('#e53935')"></button>
-<button class="color" style="background:#2196f3" onclick="setColor('#2196f3')"></button>
-<button class="color" style="background:#4caf50" onclick="setColor('#4caf50')"></button>
-<button class="color" style="background:#ff9800" onclick="setColor('#ff9800')"></button>
-<button class="color" style="background:#9c27b0" onclick="setColor('#9c27b0')"></button>
-</div>
-
-<canvas id="canvas" width="900" height="600"></canvas>
-
-<div class="center">
-<button id="finishButton" onclick="finishDrawing()">FINALIZAR DESENHO</button>
-<p id="gameMessage">Boa sorte!</p>
-</div>
+<p id="weaponStatus"></p>
 </section>
 
-<section id="results" class="panel center hidden">
-<h2>🏆 RESULTADO DA BATALHA</h2>
-<div id="result">Calculando...</div>
-<div class="players">
-<div class="player">
-<h3 id="resultHost">Jogador 1</h3>
-<p id="scoreHost">--</p>
+<section id="waiting" class="panel center hidden">
+<h2>⚔️ Preparado para lutar?</h2>
+<p id="waitingStatus">Esperando seu adversário desenhar a arma...</p>
+</section>
+
+<section id="fight" class="panel hidden">
+<div class="center">
+<h2>🔥 ARENA DE BATALHA</h2>
 </div>
-<div class="player">
-<h3 id="resultGuest">Jogador 2</h3>
-<p id="scoreGuest">--</p>
+<div class="healthrow">
+<div class="healthbox">
+<strong id="name0">Jogador 1</strong>
+<div class="bar"><div id="hp0" class="fill"></div></div>
+</div>
+<div class="healthbox">
+<strong id="name1">Jogador 2</strong>
+<div class="bar"><div id="hp1" class="fill"></div></div>
 </div>
 </div>
-<p id="winner"></p>
-<button onclick="location.reload()">VOLTAR AO INÍCIO</button>
+<canvas id="arena" width="900" height="440"></canvas>
+<div id="controls">
+<button id="left">◀</button>
+<button id="jump">⬆ PULAR</button>
+<button id="right">▶</button>
+<button id="attack">⚔️ ATACAR</button>
+</div>
+<p class="center"><small>Teclado: A/D ou setas para andar, W para pular e espaço para atacar.</small></p>
+<p id="fightStatus" class="center"></p>
+</section>
+
+<section id="end" class="panel center hidden">
+<h1 id="endTitle">🏆 FIM DE JOGO</h1>
+<p id="endText"></p>
+<button onclick="location.reload()">JOGAR NOVAMENTE</button>
 </section>
 </main>
 
 <script>
-// CONFIGURAÇÃO REAL DO SEU FIREBASE
+// FIREBASE DO SEU PROJETO
 const firebaseConfig = {
   apiKey: "AIzaSyCiIQA4PLfEX6WwrEFqpEGR_rKKBisk8Cw",
   authDomain: "draw-battle-60d94.firebaseapp.com",
@@ -143,508 +122,395 @@ const firebaseConfig = {
 };
 
 const $ = id => document.getElementById(id);
-
-let db, auth, user;
-let roomId = "";
-let roomRef = null;
-let isHost = false;
+let db, user, roomRef, roomId, slot, opponentSlot;
+let roomData = null;
+let connected = false;
+let started = false;
+let ended = false;
 let myName = "";
-let currentRoom = null;
-let timerInterval = null;
-let submitted = false;
-let finalizing = false;
-let color = "#111111";
-let tool = "pen";
-let drawing = false;
-let lastPoint = null;
+let myState = {x:150,y:320,vx:0,vy:0,hp:100,face:1,attackUntil:0};
+let otherState = null;
+let myWeapon = [];
+let otherWeapon = [];
+let lastAttack = 0;
+let seenAttacks = {};
+let gameLoop = null;
+let syncLoop = null;
+let lastFrame = 0;
 
-function show(id) {
-  ["home","lobby","game","results"].forEach(x =>
-    $(x).classList.add("hidden")
-  );
+function show(id){
+  ["home","lobby","weapon","waiting","fight","end"].forEach(x=>$(x).classList.add("hidden"));
   $(id).classList.remove("hidden");
 }
 
-function message(text) {
-  $("message").textContent = text;
-}
-
-// Inicializar Firebase
-async function initialize() {
-  try {
+async function initialize(){
+  try{
     firebase.initializeApp(firebaseConfig);
-    auth = firebase.auth();
-    db = firebase.database();
-
-    const credential = await auth.signInAnonymously();
-    user = credential.user;
-
-    message("Conectado! Você já pode jogar.");
-  } catch (error) {
-    message("Erro de conexão: " + error.message);
+    db=firebase.database();
+    const result=await firebase.auth().signInAnonymously();
+    user=result.user;
+    connected=true;
+    $("status").textContent="Conectado! Crie ou entre em uma sala.";
+  }catch(e){
+    $("status").textContent="Erro Firebase: "+e.message;
   }
 }
-
 initialize();
 
-function getName() {
-  return $("nickname").value.trim().slice(0,16) || "Jogador";
+function nameValue(){
+  return $("nickname").value.trim().slice(0,15)||"Jogador";
 }
-
-function randomCode() {
+function newCode(){
   return Math.random().toString(36).substring(2,8).toUpperCase();
 }
 
-// CRIAR SALA
-async function createRoom() {
-  if (!user) {
-    message("Aguarde a conexão com o Firebase.");
-    return;
-  }
-
-  myName = getName();
-  isHost = true;
-  $("createButton").disabled = true;
-
-  try {
-    roomId = randomCode();
-    roomRef = db.ref("rooms/" + roomId);
-
+async function createRoom(){
+  if(!connected){$("status").textContent="Aguarde a conexão.";return}
+  myName=nameValue();
+  slot="p1";opponentSlot="p2";
+  roomId=newCode();
+  roomRef=db.ref("rooms/"+roomId);
+  try{
     await roomRef.set({
-      status: "waiting",
-      hostUid: user.uid,
-      createdAt: firebase.database.ServerValue.TIMESTAMP,
-      players: {
-        host: {
-          uid: user.uid,
-          name: myName,
-          submitted: false
-        }
-      }
+      status:"waiting",
+      createdAt:Date.now(),
+      players:{
+        p1:{uid:user.uid,name:myName,weapon:null,state:myState},
+        p2:null
+      },
+      attacks:{}
     });
-
     openLobby();
-  } catch (error) {
-    message("Erro ao criar sala: " + error.message);
-    $("createButton").disabled = false;
-  }
+  }catch(e){$("status").textContent=e.message}
 }
 
-// ENTRAR NA SALA
-async function joinRoom() {
-  if (!user) {
-    message("Aguarde a conexão com o Firebase.");
-    return;
+async function joinRoom(){
+  if(!connected){$("status").textContent="Aguarde a conexão.";return}
+  myName=nameValue();
+  roomId=$("roomInput").value.trim().toUpperCase();
+  if(!/^[A-Z0-9]{6}$/.test(roomId)){
+    $("status").textContent="Código inválido.";return;
   }
-
-  myName = getName();
-  roomId = $("joinCode").value.trim().toUpperCase();
-
-  if (!/^[A-Z0-9]{6}$/.test(roomId)) {
-    message("Digite um código válido de 6 caracteres.");
-    return;
-  }
-
-  $("joinButton").disabled = true;
-  message("Procurando sala...");
-
-  try {
-    roomRef = db.ref("rooms/" + roomId);
-
-    const snapshot = await roomRef.once("value");
-
-    if (!snapshot.exists()) {
-      message("Sala não encontrada. Confira o código.");
-      $("joinButton").disabled = false;
-      return;
+  roomRef=db.ref("rooms/"+roomId);
+  try{
+    const snap=await roomRef.once("value");
+    if(!snap.exists()){ $("status").textContent="Sala não encontrada.";return}
+    const data=snap.val();
+    if(data.status!=="waiting"||data.players.p2){
+      $("status").textContent="Sala cheia ou partida iniciada.";return;
     }
-
-    const room = snapshot.val();
-
-    if (room.status !== "waiting") {
-      message("Essa partida já começou ou terminou.");
-      $("joinButton").disabled = false;
-      return;
-    }
-
-    const guestRef = roomRef.child("players/guest");
-
-    const result = await guestRef.transaction(current => {
-      if (current === null) {
-        return {
-          uid: user.uid,
-          name: myName,
-          submitted: false
-        };
-      }
+    const tx=await roomRef.child("players/p2").transaction(old=>{
+      if(old===null)return {uid:user.uid,name:myName,weapon:null,state:myState};
       return;
     });
-
-    if (!result.committed) {
-      message("Essa sala já possui dois jogadores.");
-      $("joinButton").disabled = false;
-      return;
-    }
-
-    isHost = false;
+    if(!tx.committed){$("status").textContent="A sala já está cheia.";return}
+    slot="p2";opponentSlot="p1";
     openLobby();
-
-  } catch (error) {
-    message("Erro ao entrar: " + error.message);
-    $("joinButton").disabled = false;
-  }
+  }catch(e){$("status").textContent="Erro: "+e.message}
 }
 
-// ACOMPANHAR A SALA
-function openLobby() {
+function openLobby(){
   show("lobby");
-  $("roomCode").textContent = roomId;
-  $("lobbyMessage").textContent = "Conectando à sala...";
-
-  roomRef.on("value", snapshot => {
-    if (!snapshot.exists()) {
-      $("lobbyMessage").textContent = "Sala não encontrada.";
-      return;
+  $("code").textContent=roomId;
+  roomRef.on("value",snap=>{
+    if(!snap.exists())return;
+    roomData=snap.val();
+    const p1=roomData.players?.p1;
+    const p2=roomData.players?.p2;
+    $("players").textContent=(p1?.name||"Jogador 1")+"  VS  "+(p2?.name||"Esperando...");
+    if(p1&&p2){
+      $("lobbyStatus").textContent="Os dois jogadores estão na sala!";
+      $("goWeapon").disabled=false;
+    }else{
+      $("lobbyStatus").textContent="Aguardando o segundo jogador...";
     }
-
-    currentRoom = snapshot.val();
-
-    const host = currentRoom.players?.host;
-    const guest = currentRoom.players?.guest;
-
-    $("hostName").textContent = host?.name || "Jogador 1";
-    $("guestName").textContent = guest?.name || "Aguardando...";
-
-    if (guest) {
-      $("lobbyMessage").textContent =
-        "Os dois jogadores estão conectados!";
-    } else {
-      $("lobbyMessage").textContent =
-        "Esperando o segundo jogador...";
+    if(roomData.status==="fight" && !started) beginFight();
+    if(roomData.status==="finished") showWinner();
+    if(roomData.status==="ready" && !started && !myWeapon.length){
+      // A tela de espera permanece enquanto o outro jogador termina.
     }
-
-    $("startButton").disabled =
-      !isHost || !guest || currentRoom.status !== "waiting";
-
-    if (currentRoom.status === "playing") {
-      beginGame();
-    }
-
-    if (currentRoom.status === "finished") {
-      displayResults(currentRoom);
-    }
-  }, error => {
-    $("lobbyMessage").textContent =
-      "Erro ao acompanhar sala: " + error.message;
   });
 }
 
-async function copyCode() {
-  try {
-    await navigator.clipboard.writeText(roomId);
-    alert("Código copiado!");
-  } catch {
-    alert("Código da sala: " + roomId);
+async function copyCode(){
+  try{await navigator.clipboard.writeText(roomId);alert("Código copiado!")}
+  catch{alert("Código: "+roomId)}
+}
+
+// DESENHO DA ARMA
+const wc=$("weaponCanvas"), wx=wc.getContext("2d");
+let drawing=false, currentStroke=null;
+
+function weaponBackground(){
+  wx.fillStyle="white";wx.fillRect(0,0,wc.width,wc.height);
+  wx.strokeStyle="#222";wx.lineWidth=4;wx.lineCap="round";
+  wx.beginPath();wx.moveTo(20,185);wx.lineTo(480,185);wx.stroke();
+}
+weaponBackground();
+
+function weaponPoint(e){
+  const r=wc.getBoundingClientRect();
+  return {x:(e.clientX-r.left)*wc.width/r.width,y:(e.clientY-r.top)*wc.height/r.height};
+}
+wc.addEventListener("pointerdown",e=>{
+  drawing=true;currentStroke=[];currentStroke.push(weaponPoint(e));
+  wc.setPointerCapture(e.pointerId);
+});
+wc.addEventListener("pointermove",e=>{
+  if(!drawing)return;
+  const p=weaponPoint(e);
+  currentStroke.push(p);
+  const prev=currentStroke[currentStroke.length-2];
+  wx.strokeStyle="#20202a";wx.lineWidth=7;wx.lineCap="round";
+  wx.beginPath();wx.moveTo(prev.x,prev.y);wx.lineTo(p.x,p.y);wx.stroke();
+});
+function finishStroke(){
+  if(drawing&&currentStroke&&currentStroke.length){
+    myWeapon.push(currentStroke);
   }
+  drawing=false;currentStroke=null;
+}
+wc.addEventListener("pointerup",finishStroke);
+wc.addEventListener("pointercancel",finishStroke);
+
+function clearWeapon(){
+  myWeapon=[];weaponBackground();
+}
+function drawWeaponPreview(){
+  weaponBackground();
+  wx.strokeStyle="#20202a";wx.lineWidth=7;wx.lineCap="round";
+  myWeapon.forEach(stroke=>{
+    if(stroke.length<2)return;
+    wx.beginPath();wx.moveTo(stroke[0].x,stroke[0].y);
+    stroke.slice(1).forEach(p=>wx.lineTo(p.x,p.y));
+    wx.stroke();
+  });
+}
+async function openWeapon(){
+  show("weapon");
+  if(myWeapon.length)drawWeaponPreview();
+}
+async function saveWeapon(){
+  finishStroke();
+  if(!myWeapon.length){$("weaponStatus").textContent="Desenhe uma arma primeiro!";return}
+  try{
+    await roomRef.child("players/"+slot+"/weapon").set(myWeapon);
+    $("weaponStatus").textContent="Arma equipada! Esperando o adversário...";
+    show("waiting");
+    watchWeapons();
+  }catch(e){$("weaponStatus").textContent="Erro: "+e.message}
 }
 
-// COMEÇAR PARTIDA
-async function startGame() {
-  if (!isHost || !currentRoom?.players?.guest) return;
-
-  try {
-    await roomRef.update({
-      status: "playing",
-      startedAt: Date.now(),
-      duration: 90
-    });
-  } catch (error) {
-    alert("Erro ao iniciar: " + error.message);
-  }
-}
-
-// MODELO DO DESENHO
-const canvas = $("canvas");
-const ctx = canvas.getContext("2d");
-const reference = $("reference");
-const rctx = reference.getContext("2d");
-
-function drawTarget() {
-  rctx.fillStyle = "white";
-  rctx.fillRect(0,0,360,300);
-
-  rctx.strokeStyle = "#171717";
-  rctx.lineWidth = 9;
-  rctx.lineCap = "round";
-  rctx.lineJoin = "round";
-
-  rctx.beginPath();
-  rctx.arc(180,100,57,0,Math.PI*2);
-  rctx.moveTo(139,65);
-  rctx.lineTo(127,25);
-  rctx.lineTo(164,51);
-  rctx.moveTo(197,51);
-  rctx.lineTo(233,25);
-  rctx.lineTo(221,65);
-  rctx.stroke();
-
-  rctx.beginPath();
-  rctx.arc(160,95,5,0,Math.PI*2);
-  rctx.arc(200,95,5,0,Math.PI*2);
-  rctx.fillStyle = "#171717";
-  rctx.fill();
-
-  rctx.beginPath();
-  rctx.moveTo(173,115);
-  rctx.lineTo(187,115);
-  rctx.lineTo(180,123);
-  rctx.moveTo(180,123);
-  rctx.quadraticCurveTo(160,145,149,125);
-  rctx.moveTo(180,123);
-  rctx.quadraticCurveTo(200,145,211,125);
-  rctx.stroke();
-
-  rctx.beginPath();
-  rctx.ellipse(180,222,68,62,0,0,Math.PI*2);
-  rctx.stroke();
-
-  rctx.beginPath();
-  rctx.moveTo(125,220);
-  rctx.quadraticCurveTo(55,225,90,270);
-  rctx.quadraticCurveTo(115,290,140,260);
-  rctx.stroke();
-
-  rctx.beginPath();
-  rctx.moveTo(150,266);
-  rctx.lineTo(145,280);
-  rctx.moveTo(210,266);
-  rctx.lineTo(215,280);
-  rctx.stroke();
-}
-
-// INICIAR JOGO
-function beginGame() {
-  if (!$("game").classList.contains("hidden")) return;
-
-  submitted = false;
-  finalizing = false;
-
-  show("game");
-  clearCanvas();
-  drawTarget();
-
-  $("finishButton").disabled = false;
-  $("gameMessage").textContent = "Faça seu desenho!";
-
-  clearInterval(timerInterval);
-
-  timerInterval = setInterval(() => {
-    if (!currentRoom?.startedAt) return;
-
-    const elapsed = Math.floor(
-      (Date.now() - currentRoom.startedAt) / 1000
-    );
-
-    const remaining = Math.max(0, 90 - elapsed);
-    $("timer").textContent = remaining;
-
-    if (remaining <= 0) {
-      finishDrawing();
+let weaponListener=null;
+function watchWeapons(){
+  if(weaponListener)roomRef.child("players").off("value",weaponListener);
+  weaponListener=snap=>{
+    const players=snap.val()||{};
+    const me=players[slot];
+    const other=players[opponentSlot];
+    otherWeapon=other?.weapon||[];
+    if(me?.weapon&&other?.weapon){
+      roomRef.child("status").transaction(status=>{
+        if(status==="waiting")return "fight";
+        return status;
+      });
+    }else{
+      $("waitingStatus").textContent=other?.weapon?
+        "O adversário já desenhou!":"Esperando seu adversário desenhar a arma...";
     }
-  }, 500);
-}
-
-// FERRAMENTAS
-function clearCanvas() {
-  ctx.fillStyle = "white";
-  ctx.fillRect(0,0,canvas.width,canvas.height);
-}
-
-function setColor(value) {
-  color = value;
-  tool = "pen";
-}
-
-function setTool(value) {
-  tool = value;
-}
-
-function getPoint(event) {
-  const rect = canvas.getBoundingClientRect();
-
-  return {
-    x: (event.clientX - rect.left) * canvas.width / rect.width,
-    y: (event.clientY - rect.top) * canvas.height / rect.height
   };
+  roomRef.child("players").on("value",weaponListener);
 }
 
-canvas.addEventListener("pointerdown", event => {
-  if (submitted) return;
-
-  drawing = true;
-  lastPoint = getPoint(event);
-  canvas.setPointerCapture(event.pointerId);
-});
-
-canvas.addEventListener("pointermove", event => {
-  if (!drawing || submitted) return;
-
-  const point = getPoint(event);
-
-  ctx.beginPath();
-  ctx.moveTo(lastPoint.x,lastPoint.y);
-  ctx.lineTo(point.x,point.y);
-  ctx.strokeStyle = tool === "eraser" ? "white" : color;
-  ctx.lineWidth = tool === "eraser" ? 38 : 8;
-  ctx.lineCap = "round";
-  ctx.lineJoin = "round";
-  ctx.stroke();
-
-  lastPoint = point;
-});
-
-canvas.addEventListener("pointerup", () => drawing = false);
-canvas.addEventListener("pointercancel", () => drawing = false);
-
-// CALCULAR SEMELHANÇA VISUAL
-function calculateScore(imageData) {
-  return new Promise(resolve => {
-    const image = new Image();
-
-    image.onload = () => {
-      const size = 64;
-
-      const a = document.createElement("canvas");
-      const b = document.createElement("canvas");
-
-      a.width = b.width = size;
-      a.height = b.height = size;
-
-      const ac = a.getContext("2d");
-      const bc = b.getContext("2d");
-
-      ac.fillStyle = bc.fillStyle = "white";
-      ac.fillRect(0,0,size,size);
-      bc.fillRect(0,0,size,size);
-
-      ac.drawImage(image,0,0,size,size);
-      bc.drawImage(reference,0,0,size,size);
-
-      const A = ac.getImageData(0,0,size,size).data;
-      const B = bc.getImageData(0,0,size,size).data;
-
-      let intersection = 0;
-      let union = 0;
-
-      for (let i=0; i<A.length; i+=4) {
-        const pa = A[i] < 150;
-        const pb = B[i] < 150;
-
-        if (pa && pb) intersection++;
-        if (pa || pb) union++;
-      }
-
-      resolve(union ? Math.round(intersection / union * 100) : 0);
-    };
-
-    image.onerror = () => resolve(0);
-    image.src = imageData;
+// LUTA
+const arena=$("arena"), ac=arena.getContext("2d");
+function beginFight(){
+  if(started)return;
+  started=true;show("fight");
+  roomRef.child("players").on("value",snap=>{
+    const ps=snap.val()||{};
+    const other=ps[opponentSlot];
+    if(other?.state)otherState=other.state;
+    otherWeapon=other?.weapon||[];
+    const me=ps[slot];
+    if(me?.state&&typeof me.state.hp==="number")myState.hp=me.state.hp;
+    $("name0").textContent=ps.p1?.name||"Jogador 1";
+    $("name1").textContent=ps.p2?.name||"Jogador 2";
+    updateHealth(ps);
   });
+  roomRef.child("attacks").on("child_added",snap=>{
+    const attack=snap.val();
+    if(!attack||attack.by===slot||seenAttacks[snap.key])return;
+    seenAttacks[snap.key]=true;
+    if(Math.abs(attack.x-myState.x)<115){
+      myState.hp=Math.max(0,myState.hp-12);
+      syncState();
+      if(myState.hp<=0)finishGame(opponentSlot);
+    }
+  });
+  lastFrame=performance.now();
+  gameLoop=requestAnimationFrame(loop);
+  syncLoop=setInterval(syncState,100);
 }
 
-// ENVIAR DESENHO
-async function finishDrawing() {
-  if (submitted || finalizing || !roomRef) return;
+function updateHealth(ps){
+  $("hp0").style.width=Math.max(0,ps.p1?.state?.hp??100)+"%";
+  $("hp1").style.width=Math.max(0,ps.p2?.state?.hp??100)+"%";
+}
 
-  finalizing = true;
-  $("finishButton").disabled = true;
-  $("gameMessage").textContent = "Calculando sua pontuação...";
+function loop(now){
+  if(!started||ended)return;
+  const dt=Math.min((now-lastFrame)/1000,.035);
+  lastFrame=now;
+  physics(dt);
+  renderArena();
+  gameLoop=requestAnimationFrame(loop);
+}
 
-  try {
-    clearInterval(timerInterval);
+function physics(dt){
+  myState.x+=myState.vx*dt;
+  myState.y+=myState.vy*dt;
+  myState.vy+=1100*dt;
+  if(myState.y>320){myState.y=320;myState.vy=0}
+  myState.x=Math.max(55,Math.min(845,myState.x));
+  if(Math.abs(myState.vx)>0)myState.face=myState.vx>0?1:-1;
+  myState.vx*=.82;
+}
 
-    const imageData = canvas.toDataURL("image/jpeg",0.65);
-    const score = await calculateScore(imageData);
+function drawStickman(x,y,face,weapon,attacking){
+  ac.save();
+  ac.translate(x,y);
+  ac.scale(face,1);
+  ac.strokeStyle="#171725";
+  ac.lineWidth=8;ac.lineCap="round";ac.lineJoin="round";
+  // cabeça
+  ac.beginPath();ac.arc(0,-95,20,0,Math.PI*2);ac.stroke();
+  // corpo
+  ac.beginPath();ac.moveTo(0,-75);ac.lineTo(0,-15);ac.stroke();
+  // pernas
+  ac.beginPath();ac.moveTo(0,-15);ac.lineTo(-22,0);
+  ac.moveTo(0,-15);ac.lineTo(23,0);ac.stroke();
+  // braços
+  ac.beginPath();ac.moveTo(0,-62);
+  if(attacking){
+    ac.lineTo(48,-65);
+  }else{
+    ac.lineTo(25,-35);
+  }
+  ac.moveTo(0,-62);ac.lineTo(-28,-38);ac.stroke();
 
-    const slot = isHost ? "host" : "guest";
-
-    await roomRef.child("players/" + slot).update({
-      submitted: true,
-      score: score
+  // arma desenhada
+  if(weapon?.length){
+    ac.save();
+    ac.translate(attacking?48:25,attacking?-65:-35);
+    ac.rotate(attacking?-.45:-.15);
+    ac.scale(.30,.30);
+    ac.strokeStyle="#27232e";ac.lineWidth=13;
+    weapon.forEach(stroke=>{
+      if(stroke.length<2)return;
+      ac.beginPath();ac.moveTo(stroke[0].x-250,stroke[0].y-110);
+      stroke.slice(1).forEach(p=>ac.lineTo(p.x-250,p.y-110));
+      ac.stroke();
     });
-
-    submitted = true;
-    $("gameMessage").textContent =
-      "Desenho enviado! Esperando seu adversário...";
-
-  } catch (error) {
-    finalizing = false;
-    $("finishButton").disabled = false;
-    $("gameMessage").textContent =
-      "Erro ao enviar: " + error.message;
+    ac.restore();
   }
+  ac.restore();
 }
 
-// RESULTADO
-async function checkResults(room) {
-  if (!isHost || finalizing) return;
+function renderArena(){
+  ac.clearRect(0,0,900,440);
+  ac.fillStyle="#e9e9f1";ac.fillRect(0,0,900,440);
+  ac.fillStyle="#b8b8c9";ac.fillRect(0,365,900,75);
+  ac.strokeStyle="#77778d";ac.lineWidth=5;
+  ac.beginPath();ac.moveTo(0,365);ac.lineTo(900,365);ac.stroke();
 
-  const host = room.players?.host;
-  const guest = room.players?.guest;
+  const enemy=otherState||{x:750,y:320,face:-1,hp:100};
+  drawStickman(enemy.x,enemy.y,-1,otherWeapon,false);
+  drawStickman(myState.x,myState.y,myState.face,myWeapon,Date.now()<myState.attackUntil);
+}
 
-  if (!host?.submitted || !guest?.submitted) return;
-
-  finalizing = true;
-
-  try {
-    await roomRef.update({
-      status: "finished",
-      result: {
-        hostName: host.name,
-        guestName: guest.name,
-        hostScore: host.score,
-        guestScore: guest.score
-      }
+function move(direction){
+  if(!started||ended)return;
+  myState.vx=direction*300;
+}
+function jump(){
+  if(!started||ended)return;
+  if(myState.y>=320)myState.vy=-520;
+}
+async function attack(){
+  if(!started||ended||Date.now()-lastAttack<650)return;
+  lastAttack=Date.now();
+  myState.attackUntil=Date.now()+250;
+  try{
+    await roomRef.child("attacks").push({
+      by:slot,x:myState.x,at:Date.now()
     });
-  } catch (error) {
-    finalizing = false;
-    $("gameMessage").textContent =
-      "Erro ao finalizar partida: " + error.message;
-  }
+  }catch(e){$("fightStatus").textContent="Erro no ataque: "+e.message}
 }
 
-function displayResults(room) {
-  if (!room.result) return;
-
-  clearInterval(timerInterval);
-  show("results");
-
-  const result = room.result;
-
-  $("resultHost").textContent = result.hostName;
-  $("resultGuest").textContent = result.guestName;
-
-  $("scoreHost").textContent =
-    result.hostScore + "% de semelhança";
-
-  $("scoreGuest").textContent =
-    result.guestScore + "% de semelhança";
-
-  let winner = "🤝 Empate!";
-
-  if (result.hostScore > result.guestScore) {
-    winner = "🏆 " + result.hostName + " venceu!";
-  }
-
-  if (result.guestScore > result.hostScore) {
-    winner = "🏆 " + result.guestName + " venceu!";
-  }
-
-  $("result").textContent = winner;
-
-  $("winner").textContent =
-    "Pontuação estimada pela comparação dos desenhos.";
+function syncState(){
+  if(!roomRef||!started||ended)return;
+  roomRef.child("players/"+slot+"/state").set(myState).catch(()=>{});
 }
+
+async function finishGame(winner){
+  if(ended)return;
+  ended=true;
+  started=false;
+  cancelAnimationFrame(gameLoop);
+  clearInterval(syncLoop);
+  try{
+    await roomRef.update({status:"finished",winner:winner});
+  }catch(e){}
+  showWinner();
+}
+
+function showWinner(){
+  if(!roomData){
+    // Recupera o resultado atualizado do Firebase.
+    roomRef.once("value").then(s=>{roomData=s.val();showWinner()});
+    return;
+  }
+  const winner=roomData.winner;
+  if(!winner)return;
+  ended=true;started=false;
+  cancelAnimationFrame(gameLoop);
+  clearInterval(syncLoop);
+  const winningName=winner==="p1"?
+    (roomData.players.p1?.name||"Jogador 1"):
+    (roomData.players.p2?.name||"Jogador 2");
+  $("endTitle").textContent=winner===slot?"🏆 VOCÊ VENCEU!":"💀 VOCÊ PERDEU!";
+  $("endText").textContent=winningName+" venceu a batalha!";
+  show("end");
+}
+
+// CONTROLES DE TECLADO
+const keys={};
+window.addEventListener("keydown",e=>{
+  if(["ArrowLeft","ArrowRight","ArrowUp"," "].includes(e.key))e.preventDefault();
+  if(e.repeat)return;
+  keys[e.key.toLowerCase()]=true;
+  if(e.key==="ArrowLeft"||e.key.toLowerCase()==="a")move(-1);
+  if(e.key==="ArrowRight"||e.key.toLowerCase()==="d")move(1);
+  if(e.key==="ArrowUp"||e.key.toLowerCase()==="w")jump();
+  if(e.key===" ")attack();
+});
+window.addEventListener("keyup",e=>{
+  keys[e.key.toLowerCase()]=false;
+  if(["ArrowLeft","ArrowRight","a","d"].includes(e.key.toLowerCase()))myState.vx=0;
+});
+
+function bindHold(id,direction){
+  const b=$(id);
+  b.addEventListener("pointerdown",e=>{e.preventDefault();move(direction)});
+  ["pointerup","pointerleave","pointercancel"].forEach(ev=>
+    b.addEventListener(ev,()=>{myState.vx=0})
+  );
+}
+bindHold("left",-1);
+bindHold("right",1);
+$("jump").addEventListener("click",jump);
+$("attack").addEventListener("click",attack);
 </script>
 </body>
 </html>
