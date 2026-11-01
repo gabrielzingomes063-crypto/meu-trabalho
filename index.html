@@ -4,41 +4,40 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Stickman Battle</title>
+<title>Stickman Battle - Ragdoll</title>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <style>
 *{box-sizing:border-box}
 body{margin:0;background:#10111c;color:white;font-family:Arial}
-header{text-align:center;padding:22px}
-h1{color:#b99aff;font-size:36px;margin:5px}
+header{text-align:center;padding:18px}
+h1{color:#bb9aff;margin:5px;font-size:34px}
 main{max-width:950px;margin:auto;padding:12px}
-.panel{background:#202135;border:1px solid #383951;border-radius:16px;padding:22px;margin:14px 0}
+.panel{background:#202135;border:1px solid #383951;border-radius:15px;padding:20px;margin:14px 0}
 .center{text-align:center}
 .hidden{display:none!important}
-input{width:100%;padding:14px;background:#303249;color:white;border:1px solid #50516b;border-radius:9px;margin:8px 0;font-size:16px}
-button{border:0;background:#9667ef;color:white;padding:13px 18px;border-radius:9px;font-weight:bold;cursor:pointer;margin:4px}
+input{width:100%;padding:13px;background:#303249;color:white;border:1px solid #50516b;border-radius:9px;margin:8px 0;font-size:16px}
+button{border:0;background:#9667ef;color:white;padding:13px 17px;border-radius:9px;font-weight:bold;cursor:pointer;margin:4px}
 button:disabled{opacity:.5}
-#status{color:#c8aaff;min-height:25px}
+#status{color:#c8aaff}
 #code{font-size:34px;color:#c8aaff;letter-spacing:6px}
 #weaponCanvas{background:white;width:100%;max-width:500px;border-radius:10px;touch-action:none}
 #arena{width:100%;background:#e9e9f1;border-radius:12px;display:block}
-.healthrow{display:flex;gap:15px;margin:12px 0}
+.healthrow{display:flex;gap:12px;margin:12px 0}
 .healthbox{flex:1;background:#303249;padding:10px;border-radius:10px}
 .bar{height:15px;background:#555;border-radius:20px;overflow:hidden;margin-top:8px}
 .fill{height:100%;background:#40d77b;width:100%;transition:width .2s}
-#controls{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin:12px}
-#controls button{min-width:85px;font-size:18px}
+#controls{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin:12px}
+#controls button{min-width:65px;font-size:18px}
 small{color:#aaa}
 </style>
 </head>
 <body>
 <header>
 <h1>⚔️ STICKMAN BATTLE</h1>
-<p>Desenhe sua arma. Entre na arena. Derrote seu adversário!</p>
+<p>Desenhe sua arma e lute com física ragdoll!</p>
 </header>
-
 <main>
 <section id="home" class="panel center">
 <h2>Entrar na batalha</h2>
@@ -52,7 +51,7 @@ small{color:#aaa}
 
 <section id="lobby" class="panel center hidden">
 <h2>Sua sala</h2>
-<p>Compartilhe o código com seu adversário:</p>
+<p>Compartilhe o código:</p>
 <div id="code">------</div>
 <button onclick="copyCode()">COPIAR CÓDIGO</button>
 <h3 id="players">Esperando adversário...</h3>
@@ -62,7 +61,7 @@ small{color:#aaa}
 
 <section id="weapon" class="panel center hidden">
 <h2>🎨 Desenhe sua arma</h2>
-<p>Use o mouse ou o dedo para desenhar. Vale espada, machado, martelo, lança...</p>
+<p>Desenhe uma espada, machado, martelo ou qualquer arma!</p>
 <canvas id="weaponCanvas" width="500" height="220"></canvas>
 <div>
 <button onclick="clearWeapon()">APAGAR</button>
@@ -72,14 +71,12 @@ small{color:#aaa}
 </section>
 
 <section id="waiting" class="panel center hidden">
-<h2>⚔️ Preparado para lutar?</h2>
-<p id="waitingStatus">Esperando seu adversário desenhar a arma...</p>
+<h2>⚔️ Preparado?</h2>
+<p id="waitingStatus">Esperando o adversário...</p>
 </section>
 
 <section id="fight" class="panel hidden">
-<div class="center">
-<h2>🔥 ARENA DE BATALHA</h2>
-</div>
+<div class="center"><h2>🔥 ARENA RAGDOLL</h2></div>
 <div class="healthrow">
 <div class="healthbox">
 <strong id="name0">Jogador 1</strong>
@@ -93,11 +90,11 @@ small{color:#aaa}
 <canvas id="arena" width="900" height="440"></canvas>
 <div id="controls">
 <button id="left">◀</button>
-<button id="jump">⬆ PULAR</button>
+<button id="jump">⬆</button>
 <button id="right">▶</button>
 <button id="attack">⚔️ ATACAR</button>
 </div>
-<p class="center"><small>Teclado: A/D ou setas para andar, W para pular e espaço para atacar.</small></p>
+<p class="center"><small>A/D ou setas: andar | W ou ↑: pular | Espaço: atacar</small></p>
 <p id="fightStatus" class="center"></p>
 </section>
 
@@ -109,408 +106,514 @@ small{color:#aaa}
 </main>
 
 <script>
-// FIREBASE DO SEU PROJETO
-const firebaseConfig = {
-  apiKey: "AIzaSyCiIQA4PLfEX6WwrEFqpEGR_rKKBisk8Cw",
-  authDomain: "draw-battle-60d94.firebaseapp.com",
-  databaseURL: "https://draw-battle-60d94-default-rtdb.firebaseio.com",
-  projectId: "draw-battle-60d94",
-  storageBucket: "draw-battle-60d94.firebasestorage.app",
-  messagingSenderId: "533481028234",
-  appId: "1:533481028234:web:d2fb69123057bcdd3e4b73",
-  measurementId: "G-4ZZY2234EY"
+const firebaseConfig={
+apiKey:"AIzaSyCiIQA4PLfEX6WwrEFqpEGR_rKKBisk8Cw",
+authDomain:"draw-battle-60d94.firebaseapp.com",
+databaseURL:"https://draw-battle-60d94-default-rtdb.firebaseio.com",
+projectId:"draw-battle-60d94",
+storageBucket:"draw-battle-60d94.firebasestorage.app",
+messagingSenderId:"533481028234",
+appId:"1:533481028234:web:d2fb69123057bcdd3e4b73",
+measurementId:"G-4ZZY2234EY"
 };
 
-const $ = id => document.getElementById(id);
-let db, user, roomRef, roomId, slot, opponentSlot;
-let roomData = null;
-let connected = false;
-let started = false;
-let ended = false;
-let myName = "";
-let myState = {x:150,y:320,vx:0,vy:0,hp:100,face:1,attackUntil:0};
-let otherState = null;
-let myWeapon = [];
-let otherWeapon = [];
-let lastAttack = 0;
-let seenAttacks = {};
-let gameLoop = null;
-let syncLoop = null;
-let lastFrame = 0;
+const $=id=>document.getElementById(id);
+let db,user,roomRef,roomId,slot,opponentSlot;
+let connected=false,started=false,ended=false;
+let roomData=null,otherState=null;
+let myName="",myWeapon=[],otherWeapon=[];
+let gameLoop=null,syncLoop=null,lastFrame=0,lastAttack=0;
+let seenAttacks={};
+
+function makeState(x){
+return {
+x,y:320,vx:0,vy:0,hp:100,
+face:1,onGround:true,stun:0,
+attackUntil:0,attackPower:0,
+bodyAngle:0,bodyVelocity:0,
+armL:0,armR:0,legL:0,legR:0,
+armLV:0,armRV:0,legLV:0,legRV:0,
+knock:0
+};
+}
+let myState=makeState(150);
 
 function show(id){
-  ["home","lobby","weapon","waiting","fight","end"].forEach(x=>$(x).classList.add("hidden"));
-  $(id).classList.remove("hidden");
+["home","lobby","weapon","waiting","fight","end"].forEach(x=>$(x).classList.add("hidden"));
+$(id).classList.remove("hidden");
 }
 
 async function initialize(){
-  try{
-    firebase.initializeApp(firebaseConfig);
-    db=firebase.database();
-    const result=await firebase.auth().signInAnonymously();
-    user=result.user;
-    connected=true;
-    $("status").textContent="Conectado! Crie ou entre em uma sala.";
-  }catch(e){
-    $("status").textContent="Erro Firebase: "+e.message;
-  }
+try{
+firebase.initializeApp(firebaseConfig);
+db=firebase.database();
+user=(await firebase.auth().signInAnonymously()).user;
+connected=true;
+$("status").textContent="Conectado! Crie ou entre em uma sala.";
+}catch(e){$("status").textContent="Erro Firebase: "+e.message}
 }
 initialize();
 
 function nameValue(){
-  return $("nickname").value.trim().slice(0,15)||"Jogador";
+return $("nickname").value.trim().slice(0,15)||"Jogador";
 }
 function newCode(){
-  return Math.random().toString(36).substring(2,8).toUpperCase();
+return Math.random().toString(36).substring(2,8).toUpperCase();
 }
 
 async function createRoom(){
-  if(!connected){$("status").textContent="Aguarde a conexão.";return}
-  myName=nameValue();
-  slot="p1";opponentSlot="p2";
-  roomId=newCode();
-  roomRef=db.ref("rooms/"+roomId);
-  try{
-    await roomRef.set({
-      status:"waiting",
-      createdAt:Date.now(),
-      players:{
-        p1:{uid:user.uid,name:myName,weapon:null,state:myState},
-        p2:null
-      },
-      attacks:{}
-    });
-    openLobby();
-  }catch(e){$("status").textContent=e.message}
+if(!connected)return;
+myName=nameValue();
+slot="p1";opponentSlot="p2";
+roomId=newCode();
+myState=makeState(180);
+roomRef=db.ref("rooms/"+roomId);
+try{
+await roomRef.set({
+type:"stickfight",
+status:"waiting",
+createdAt:Date.now(),
+players:{
+p1:{uid:user.uid,name:myName,weapon:null,state:myState},
+p2:null
+},
+attacks:{}
+});
+openLobby();
+}catch(e){$("status").textContent=e.message}
 }
 
 async function joinRoom(){
-  if(!connected){$("status").textContent="Aguarde a conexão.";return}
-  myName=nameValue();
-  roomId=$("roomInput").value.trim().toUpperCase();
-  if(!/^[A-Z0-9]{6}$/.test(roomId)){
-    $("status").textContent="Código inválido.";return;
-  }
-  roomRef=db.ref("rooms/"+roomId);
-  try{
-    const snap=await roomRef.once("value");
-    if(!snap.exists()){ $("status").textContent="Sala não encontrada.";return}
-    const data=snap.val();
-    if(data.status!=="waiting"||data.players.p2){
-      $("status").textContent="Sala cheia ou partida iniciada.";return;
-    }
-    const tx=await roomRef.child("players/p2").transaction(old=>{
-      if(old===null)return {uid:user.uid,name:myName,weapon:null,state:myState};
-      return;
-    });
-    if(!tx.committed){$("status").textContent="A sala já está cheia.";return}
-    slot="p2";opponentSlot="p1";
-    openLobby();
-  }catch(e){$("status").textContent="Erro: "+e.message}
+if(!connected)return;
+myName=nameValue();
+roomId=$("roomInput").value.trim().toUpperCase();
+if(!/^[A-Z0-9]{6}$/.test(roomId)){
+$("status").textContent="Código inválido.";return;
+}
+roomRef=db.ref("rooms/"+roomId);
+try{
+const snap=await roomRef.once("value");
+if(!snap.exists()||snap.val().type!=="stickfight"){
+$("status").textContent="Sala não encontrada.";return;
+}
+if(snap.val().status!=="waiting"||snap.val().players?.p2){
+$("status").textContent="Sala cheia ou partida iniciada.";return;
+}
+slot="p2";opponentSlot="p1";
+myState=makeState(720);
+const tx=await roomRef.child("players/p2").transaction(old=>{
+if(old===null)return {uid:user.uid,name:myName,weapon:null,state:myState};
+return;
+});
+if(!tx.committed){$("status").textContent="Sala cheia.";return}
+openLobby();
+}catch(e){$("status").textContent=e.message}
 }
 
 function openLobby(){
-  show("lobby");
-  $("code").textContent=roomId;
-  roomRef.on("value",snap=>{
-    if(!snap.exists())return;
-    roomData=snap.val();
-    const p1=roomData.players?.p1;
-    const p2=roomData.players?.p2;
-    $("players").textContent=(p1?.name||"Jogador 1")+"  VS  "+(p2?.name||"Esperando...");
-    if(p1&&p2){
-      $("lobbyStatus").textContent="Os dois jogadores estão na sala!";
-      $("goWeapon").disabled=false;
-    }else{
-      $("lobbyStatus").textContent="Aguardando o segundo jogador...";
-    }
-    if(roomData.status==="fight" && !started) beginFight();
-    if(roomData.status==="finished") showWinner();
-    if(roomData.status==="ready" && !started && !myWeapon.length){
-      // A tela de espera permanece enquanto o outro jogador termina.
-    }
-  });
+show("lobby");
+$("code").textContent=roomId;
+roomRef.on("value",snap=>{
+if(!snap.exists())return;
+roomData=snap.val();
+const p1=roomData.players?.p1,p2=roomData.players?.p2;
+$("players").textContent=(p1?.name||"Jogador 1")+" VS "+(p2?.name||"Esperando...");
+$("goWeapon").disabled=!(p1&&p2);
+if(p1&&p2)$("lobbyStatus").textContent="Os dois jogadores estão na sala!";
+if(roomData.status==="fight"&&!started)beginFight();
+if(roomData.status==="finished")showWinner();
+});
 }
 
 async function copyCode(){
-  try{await navigator.clipboard.writeText(roomId);alert("Código copiado!")}
-  catch{alert("Código: "+roomId)}
+try{await navigator.clipboard.writeText(roomId);alert("Código copiado!")}
+catch{alert("Código: "+roomId)}
 }
 
-// DESENHO DA ARMA
-const wc=$("weaponCanvas"), wx=wc.getContext("2d");
-let drawing=false, currentStroke=null;
-
+// EDITOR DE ARMAS
+const wc=$("weaponCanvas"),wx=wc.getContext("2d");
+let drawing=false,currentStroke=null;
 function weaponBackground(){
-  wx.fillStyle="white";wx.fillRect(0,0,wc.width,wc.height);
-  wx.strokeStyle="#222";wx.lineWidth=4;wx.lineCap="round";
-  wx.beginPath();wx.moveTo(20,185);wx.lineTo(480,185);wx.stroke();
+wx.fillStyle="white";wx.fillRect(0,0,500,220);
 }
 weaponBackground();
 
 function weaponPoint(e){
-  const r=wc.getBoundingClientRect();
-  return {x:(e.clientX-r.left)*wc.width/r.width,y:(e.clientY-r.top)*wc.height/r.height};
+const r=wc.getBoundingClientRect();
+return {x:(e.clientX-r.left)*500/r.width,y:(e.clientY-r.top)*220/r.height};
 }
 wc.addEventListener("pointerdown",e=>{
-  drawing=true;currentStroke=[];currentStroke.push(weaponPoint(e));
-  wc.setPointerCapture(e.pointerId);
+drawing=true;currentStroke=[];currentStroke.push(weaponPoint(e));
+wc.setPointerCapture(e.pointerId);
 });
 wc.addEventListener("pointermove",e=>{
-  if(!drawing)return;
-  const p=weaponPoint(e);
-  currentStroke.push(p);
-  const prev=currentStroke[currentStroke.length-2];
-  wx.strokeStyle="#20202a";wx.lineWidth=7;wx.lineCap="round";
-  wx.beginPath();wx.moveTo(prev.x,prev.y);wx.lineTo(p.x,p.y);wx.stroke();
+if(!drawing)return;
+const p=weaponPoint(e);
+currentStroke.push(p);
+if(currentStroke.length>1){
+const a=currentStroke[currentStroke.length-2];
+wx.strokeStyle="#222";wx.lineWidth=7;wx.lineCap="round";
+wx.beginPath();wx.moveTo(a.x,a.y);wx.lineTo(p.x,p.y);wx.stroke();
+}
 });
 function finishStroke(){
-  if(drawing&&currentStroke&&currentStroke.length){
-    myWeapon.push(currentStroke);
-  }
-  drawing=false;currentStroke=null;
+if(drawing&&currentStroke?.length)myWeapon.push(currentStroke);
+drawing=false;currentStroke=null;
 }
 wc.addEventListener("pointerup",finishStroke);
 wc.addEventListener("pointercancel",finishStroke);
 
-function clearWeapon(){
-  myWeapon=[];weaponBackground();
-}
+function clearWeapon(){myWeapon=[];weaponBackground()}
 function drawWeaponPreview(){
-  weaponBackground();
-  wx.strokeStyle="#20202a";wx.lineWidth=7;wx.lineCap="round";
-  myWeapon.forEach(stroke=>{
-    if(stroke.length<2)return;
-    wx.beginPath();wx.moveTo(stroke[0].x,stroke[0].y);
-    stroke.slice(1).forEach(p=>wx.lineTo(p.x,p.y));
-    wx.stroke();
-  });
+weaponBackground();
+wx.strokeStyle="#222";wx.lineWidth=7;wx.lineCap="round";
+myWeapon.forEach(s=>{
+if(s.length<2)return;
+wx.beginPath();wx.moveTo(s[0].x,s[0].y);
+s.slice(1).forEach(p=>wx.lineTo(p.x,p.y));
+wx.stroke();
+});
 }
-async function openWeapon(){
-  show("weapon");
-  if(myWeapon.length)drawWeaponPreview();
+function openWeapon(){
+show("weapon");
+if(myWeapon.length)drawWeaponPreview();
 }
 async function saveWeapon(){
-  finishStroke();
-  if(!myWeapon.length){$("weaponStatus").textContent="Desenhe uma arma primeiro!";return}
-  try{
-    await roomRef.child("players/"+slot+"/weapon").set(myWeapon);
-    $("weaponStatus").textContent="Arma equipada! Esperando o adversário...";
-    show("waiting");
-    watchWeapons();
-  }catch(e){$("weaponStatus").textContent="Erro: "+e.message}
+finishStroke();
+if(!myWeapon.length){$("weaponStatus").textContent="Desenhe sua arma!";return}
+try{
+await roomRef.child("players/"+slot+"/weapon").set(myWeapon);
+show("waiting");
+$("waitingStatus").textContent="Arma equipada! Esperando o adversário...";
+watchWeapons();
+}catch(e){$("weaponStatus").textContent=e.message}
 }
 
-let weaponListener=null;
 function watchWeapons(){
-  if(weaponListener)roomRef.child("players").off("value",weaponListener);
-  weaponListener=snap=>{
-    const players=snap.val()||{};
-    const me=players[slot];
-    const other=players[opponentSlot];
-    otherWeapon=other?.weapon||[];
-    if(me?.weapon&&other?.weapon){
-      roomRef.child("status").transaction(status=>{
-        if(status==="waiting")return "fight";
-        return status;
-      });
-    }else{
-      $("waitingStatus").textContent=other?.weapon?
-        "O adversário já desenhou!":"Esperando seu adversário desenhar a arma...";
-    }
-  };
-  roomRef.child("players").on("value",weaponListener);
+roomRef.child("players").on("value",snap=>{
+const p=snap.val()||{};
+otherWeapon=p[opponentSlot]?.weapon||[];
+if(p.p1?.weapon&&p.p2?.weapon){
+roomRef.child("status").transaction(s=>{
+if(s==="waiting")return "fight";
+return s;
+});
+}else{
+$("waitingStatus").textContent="Esperando o adversário desenhar...";
+}
+});
 }
 
-// LUTA
-const arena=$("arena"), ac=arena.getContext("2d");
-function beginFight(){
-  if(started)return;
-  started=true;show("fight");
-  roomRef.child("players").on("value",snap=>{
-    const ps=snap.val()||{};
-    const other=ps[opponentSlot];
-    if(other?.state)otherState=other.state;
-    otherWeapon=other?.weapon||[];
-    const me=ps[slot];
-    if(me?.state&&typeof me.state.hp==="number")myState.hp=me.state.hp;
-    $("name0").textContent=ps.p1?.name||"Jogador 1";
-    $("name1").textContent=ps.p2?.name||"Jogador 2";
-    updateHealth(ps);
-  });
-  roomRef.child("attacks").on("child_added",snap=>{
-    const attack=snap.val();
-    if(!attack||attack.by===slot||seenAttacks[snap.key])return;
-    seenAttacks[snap.key]=true;
-    if(Math.abs(attack.x-myState.x)<115){
-      myState.hp=Math.max(0,myState.hp-12);
-      syncState();
-      if(myState.hp<=0)finishGame(opponentSlot);
-    }
-  });
-  lastFrame=performance.now();
-  gameLoop=requestAnimationFrame(loop);
-  syncLoop=setInterval(syncState,100);
-}
-
-function updateHealth(ps){
-  $("hp0").style.width=Math.max(0,ps.p1?.state?.hp??100)+"%";
-  $("hp1").style.width=Math.max(0,ps.p2?.state?.hp??100)+"%";
-}
-
-function loop(now){
-  if(!started||ended)return;
-  const dt=Math.min((now-lastFrame)/1000,.035);
-  lastFrame=now;
-  physics(dt);
-  renderArena();
-  gameLoop=requestAnimationFrame(loop);
-}
+// FÍSICA RAGDOLL
+const GRAVITY=1450;
+const FLOOR=320;
 
 function physics(dt){
-  myState.x+=myState.vx*dt;
-  myState.y+=myState.vy*dt;
-  myState.vy+=1100*dt;
-  if(myState.y>320){myState.y=320;myState.vy=0}
-  myState.x=Math.max(55,Math.min(845,myState.x));
-  if(Math.abs(myState.vx)>0)myState.face=myState.vx>0?1:-1;
-  myState.vx*=.82;
+const s=myState;
+s.vy+=GRAVITY*dt;
+
+// Resistência do ar
+s.vx*=Math.pow(s.onGround?.91:.995,dt*60);
+s.vy*=Math.pow(.999,dt*60);
+
+// Movimento principal
+s.x+=s.vx*dt;
+s.y+=s.vy*dt;
+
+// Colisão com o chão e quique
+if(s.y>=FLOOR){
+if(!s.onGround&&Math.abs(s.vy)>180){
+s.vy=-s.vy*.17;
+s.vx*=.82;
+}else{
+s.vy=0;
+}
+s.y=FLOOR;
+s.onGround=true;
+}else{
+s.onGround=false;
 }
 
-function drawStickman(x,y,face,weapon,attacking){
-  ac.save();
-  ac.translate(x,y);
-  ac.scale(face,1);
-  ac.strokeStyle="#171725";
-  ac.lineWidth=8;ac.lineCap="round";ac.lineJoin="round";
-  // cabeça
-  ac.beginPath();ac.arc(0,-95,20,0,Math.PI*2);ac.stroke();
-  // corpo
-  ac.beginPath();ac.moveTo(0,-75);ac.lineTo(0,-15);ac.stroke();
-  // pernas
-  ac.beginPath();ac.moveTo(0,-15);ac.lineTo(-22,0);
-  ac.moveTo(0,-15);ac.lineTo(23,0);ac.stroke();
-  // braços
-  ac.beginPath();ac.moveTo(0,-62);
-  if(attacking){
-    ac.lineTo(48,-65);
-  }else{
-    ac.lineTo(25,-35);
-  }
-  ac.moveTo(0,-62);ac.lineTo(-28,-38);ac.stroke();
+// Paredes
+if(s.x<48){s.x=48;s.vx=Math.abs(s.vx)*.5}
+if(s.x>852){s.x=852;s.vx=-Math.abs(s.vx)*.5}
 
-  // arma desenhada
-  if(weapon?.length){
-    ac.save();
-    ac.translate(attacking?48:25,attacking?-65:-35);
-    ac.rotate(attacking?-.45:-.15);
-    ac.scale(.30,.30);
-    ac.strokeStyle="#27232e";ac.lineWidth=13;
-    weapon.forEach(stroke=>{
-      if(stroke.length<2)return;
-      ac.beginPath();ac.moveTo(stroke[0].x-250,stroke[0].y-110);
-      stroke.slice(1).forEach(p=>ac.lineTo(p.x-250,p.y-110));
-      ac.stroke();
-    });
-    ac.restore();
-  }
-  ac.restore();
+// Movimento do corpo: o tronco reage ao impulso
+const targetBody=Math.max(-.75,Math.min(.75,-s.vx*.0015));
+spring("bodyAngle","bodyVelocity",targetBody,13,4,dt);
+
+// Braços e pernas: articulações com mola
+const moving=Math.min(1,Math.abs(s.vx)/300);
+const airborne=s.onGround?0:1;
+const swing=Math.sin(Date.now()*.012)*moving*.75;
+
+spring("armL","armLV",swing+airborne*.4,12,3,dt);
+spring("armR","armRV",-swing-airborne*.3,12,3,dt);
+spring("legL","legLV",-swing-airborne*.5,10,3,dt);
+spring("legR","legRV",swing+airborne*.5,10,3,dt);
+
+// Recuperação depois do golpe
+if(s.stun>0)s.stun=Math.max(0,s.stun-dt);
+if(s.knock>0)s.knock=Math.max(0,s.knock-dt);
+}
+
+function spring(angle,velocity,target,strength,damping,dt){
+const s=myState;
+s[velocity]+=(target-s[angle])*strength*dt;
+s[velocity]*=Math.max(0,1-damping*dt);
+s[angle]+=s[velocity]*dt;
+}
+
+// PULO
+function jump(){
+const s=myState;
+if(!started||ended||!s.onGround||s.stun>0)return;
+s.vy=-650;
+s.vx+=s.face*55;
+s.onGround=false;
+s.armLV-=2;
+s.armRV+=2;
+}
+
+// IMPACTO
+function receiveHit(direction,force=520,damage=12){
+const s=myState;
+s.hp=Math.max(0,s.hp-damage);
+s.vx+=direction*force;
+s.vy-=force*.65;
+s.bodyVelocity+=-direction*3.5;
+s.armLV+=direction*5;
+s.armRV-=direction*5;
+s.legLV-=direction*2;
+s.legRV+=direction*2;
+s.stun=.45;
+s.knock=.5;
+syncState();
+if(s.hp<=0)finishGame(opponentSlot);
+}
+
+// ATAQUE
+async function attack(){
+if(!started||ended||Date.now()-lastAttack<750)return;
+lastAttack=Date.now();
+myState.attackUntil=Date.now()+350;
+myState.vx+=myState.face*110;
+myState.armRV-=2.5;
+myState.bodyVelocity+=myState.face*1.5;
+try{
+await roomRef.child("attacks").push({
+by:slot,x:myState.x,y:myState.y,
+at:Date.now(),damage:15
+});
+}catch(e){}
+}
+
+// DESENHO DO RAGDOLL
+const arena=$("arena"),ac=arena.getContext("2d");
+
+function limb(x1,y1,x2,y2,width=9){
+ac.lineWidth=width;
+ac.beginPath();ac.moveTo(x1,y1);ac.lineTo(x2,y2);ac.stroke();
+}
+
+function drawWeapon(weapon,x,y,angle,face){
+if(!weapon?.length)return;
+ac.save();
+ac.translate(x,y);
+ac.rotate(angle);
+ac.scale(face*.34,.34);
+ac.strokeStyle="#29232e";
+ac.lineWidth=13;
+ac.lineCap="round";
+weapon.forEach(stroke=>{
+if(stroke.length<2)return;
+ac.beginPath();
+ac.moveTo(stroke[0].x-250,stroke[0].y-110);
+stroke.slice(1).forEach(p=>ac.lineTo(p.x-250,p.y-110));
+ac.stroke();
+});
+ac.restore();
+}
+
+function drawRagdoll(s,weapon,color){
+ac.save();
+ac.translate(s.x,s.y);
+ac.rotate(s.bodyAngle);
+ac.strokeStyle=color;
+ac.fillStyle=color;
+ac.lineWidth=9;
+ac.lineCap="round";
+ac.lineJoin="round";
+
+const headY=-103;
+const shoulderY=-65;
+const hipY=-12;
+
+// Cabeça
+ac.beginPath();
+ac.arc(0,headY,19,0,Math.PI*2);
+ac.stroke();
+
+// Tronco
+limb(0,headY+20,0,hipY,10);
+
+// Braço esquerdo
+let lShoulder={x:-2,y:shoulderY};
+let lElbow={x:-28+Math.sin(s.armL)*15,y:-38+Math.cos(s.armL)*10};
+let lHand={x:-40+Math.sin(s.armL)*24,y:-8+Math.cos(s.armL)*14};
+limb(lShoulder.x,lShoulder.y,lElbow.x,lElbow.y,8);
+limb(lElbow.x,lElbow.y,lHand.x,lHand.y,7);
+
+// Braço direito
+let rShoulder={x:2,y:shoulderY};
+let rElbow={x:30+Math.sin(s.armR)*18,y:-42+Math.cos(s.armR)*12};
+let rHand={x:48+Math.sin(s.armR)*28,y:-15+Math.cos(s.armR)*18};
+limb(rShoulder.x,rShoulder.y,rElbow.x,rElbow.y,8);
+limb(rElbow.x,rElbow.y,rHand.x,rHand.y,7);
+
+// Arma na mão direita
+if(weapon?.length){
+drawWeapon(weapon,rHand.x,rHand.y,s.armR*.5,1);
+}
+
+// Pernas
+let lKnee={x:-20+Math.sin(s.legL)*18,y:30+Math.cos(s.legL)*8};
+let lFoot={x:-28+Math.sin(s.legL)*34,y:65};
+let rKnee={x:20+Math.sin(s.legR)*18,y:30+Math.cos(s.legR)*8};
+let rFoot={x:28+Math.sin(s.legR)*34,y:65};
+limb(0,hipY,lKnee.x,lKnee.y,9);
+limb(lKnee.x,lKnee.y,lFoot.x,lFoot.y,8);
+limb(0,hipY,rKnee.x,rKnee.y,9);
+limb(rKnee.x,rKnee.y,rFoot.x,rFoot.y,8);
+
+// Efeito visual de atordoamento
+if(s.stun>0){
+ac.fillStyle="#ffb52e";
+ac.font="bold 22px Arial";
+ac.fillText("✦",25,-125);
+}
+ac.restore();
 }
 
 function renderArena(){
-  ac.clearRect(0,0,900,440);
-  ac.fillStyle="#e9e9f1";ac.fillRect(0,0,900,440);
-  ac.fillStyle="#b8b8c9";ac.fillRect(0,365,900,75);
-  ac.strokeStyle="#77778d";ac.lineWidth=5;
-  ac.beginPath();ac.moveTo(0,365);ac.lineTo(900,365);ac.stroke();
+ac.clearRect(0,0,900,440);
+ac.fillStyle="#e9e9f1";
+ac.fillRect(0,0,900,440);
+ac.fillStyle="#b8b8c9";
+ac.fillRect(0,365,900,75);
+ac.strokeStyle="#77778d";
+ac.lineWidth=5;
+ac.beginPath();ac.moveTo(0,365);ac.lineTo(900,365);ac.stroke();
 
-  const enemy=otherState||{x:750,y:320,face:-1,hp:100};
-  drawStickman(enemy.x,enemy.y,-1,otherWeapon,false);
-  drawStickman(myState.x,myState.y,myState.face,myWeapon,Date.now()<myState.attackUntil);
+if(otherState){
+drawRagdoll(otherState,otherWeapon,"#c94f59");
+}
+drawRagdoll(myState,myWeapon,"#24243b");
 }
 
-function move(direction){
-  if(!started||ended)return;
-  myState.vx=direction*300;
+// INÍCIO DA PARTIDA
+function beginFight(){
+if(started)return;
+started=true;
+show("fight");
+roomRef.child("players").on("value",snap=>{
+const p=snap.val()||{};
+const other=p[opponentSlot];
+if(other?.state)otherState=other.state;
+otherWeapon=other?.weapon||[];
+$("name0").textContent=p.p1?.name||"Jogador 1";
+$("name1").textContent=p.p2?.name||"Jogador 2";
+$("hp0").style.width=(p.p1?.state?.hp??100)+"%";
+$("hp1").style.width=(p.p2?.state?.hp??100)+"%";
+});
+roomRef.child("attacks").on("child_added",snap=>{
+const a=snap.val();
+if(!a||a.by===slot||seenAttacks[snap.key])return;
+seenAttacks[snap.key]=true;
+if(Math.abs(a.x-myState.x)<125&&Math.abs(a.y-myState.y)<120){
+const direction=a.x<myState.x?1:-1;
+receiveHit(direction,530,a.damage||15);
 }
-function jump(){
-  if(!started||ended)return;
-  if(myState.y>=320)myState.vy=-520;
+});
+lastFrame=performance.now();
+gameLoop=requestAnimationFrame(loop);
+syncLoop=setInterval(syncState,100);
 }
-async function attack(){
-  if(!started||ended||Date.now()-lastAttack<650)return;
-  lastAttack=Date.now();
-  myState.attackUntil=Date.now()+250;
-  try{
-    await roomRef.child("attacks").push({
-      by:slot,x:myState.x,at:Date.now()
-    });
-  }catch(e){$("fightStatus").textContent="Erro no ataque: "+e.message}
+
+function loop(now){
+if(!started||ended)return;
+const dt=Math.min((now-lastFrame)/1000,.035);
+lastFrame=now;
+physics(dt);
+renderArena();
+gameLoop=requestAnimationFrame(loop);
 }
 
 function syncState(){
-  if(!roomRef||!started||ended)return;
-  roomRef.child("players/"+slot+"/state").set(myState).catch(()=>{});
+if(!roomRef||!started||ended)return;
+roomRef.child("players/"+slot+"/state").set(myState).catch(()=>{});
 }
 
+// FINAL DE PARTIDA
 async function finishGame(winner){
-  if(ended)return;
-  ended=true;
-  started=false;
-  cancelAnimationFrame(gameLoop);
-  clearInterval(syncLoop);
-  try{
-    await roomRef.update({status:"finished",winner:winner});
-  }catch(e){}
-  showWinner();
+if(ended)return;
+ended=true;started=false;
+cancelAnimationFrame(gameLoop);
+clearInterval(syncLoop);
+try{await roomRef.update({status:"finished",winner})}catch(e){}
+showWinner();
 }
-
 function showWinner(){
-  if(!roomData){
-    // Recupera o resultado atualizado do Firebase.
-    roomRef.once("value").then(s=>{roomData=s.val();showWinner()});
-    return;
-  }
-  const winner=roomData.winner;
-  if(!winner)return;
-  ended=true;started=false;
-  cancelAnimationFrame(gameLoop);
-  clearInterval(syncLoop);
-  const winningName=winner==="p1"?
-    (roomData.players.p1?.name||"Jogador 1"):
-    (roomData.players.p2?.name||"Jogador 2");
-  $("endTitle").textContent=winner===slot?"🏆 VOCÊ VENCEU!":"💀 VOCÊ PERDEU!";
-  $("endText").textContent=winningName+" venceu a batalha!";
-  show("end");
+if(!roomData){
+roomRef.once("value").then(s=>{roomData=s.val();showWinner()});
+return;
+}
+const winner=roomData.winner;
+if(!winner)return;
+ended=true;started=false;
+cancelAnimationFrame(gameLoop);
+clearInterval(syncLoop);
+const winningName=winner==="p1"?
+(roomData.players.p1?.name||"Jogador 1"):
+(roomData.players.p2?.name||"Jogador 2");
+$("endTitle").textContent=winner===slot?"🏆 VOCÊ VENCEU!":"💀 VOCÊ PERDEU!";
+$("endText").textContent=winningName+" venceu a batalha!";
+show("end");
 }
 
-// CONTROLES DE TECLADO
-const keys={};
-window.addEventListener("keydown",e=>{
-  if(["ArrowLeft","ArrowRight","ArrowUp"," "].includes(e.key))e.preventDefault();
-  if(e.repeat)return;
-  keys[e.key.toLowerCase()]=true;
-  if(e.key==="ArrowLeft"||e.key.toLowerCase()==="a")move(-1);
-  if(e.key==="ArrowRight"||e.key.toLowerCase()==="d")move(1);
-  if(e.key==="ArrowUp"||e.key.toLowerCase()==="w")jump();
-  if(e.key===" ")attack();
+// CONTROLES
+function move(d){
+if(!started||ended||myState.stun>0)return;
+myState.vx+=d*85;
+myState.vx=Math.max(-340,Math.min(340,myState.vx));
+myState.face=d;
+myState.legLV+=d*.08;
+myState.legRV-=d*.08;
+}
+function bindHold(id,d){
+let timer=null;
+const b=$(id);
+b.addEventListener("pointerdown",e=>{
+e.preventDefault();move(d);
+timer=setInterval(()=>move(d),100);
 });
-window.addEventListener("keyup",e=>{
-  keys[e.key.toLowerCase()]=false;
-  if(["ArrowLeft","ArrowRight","a","d"].includes(e.key.toLowerCase()))myState.vx=0;
-});
-
-function bindHold(id,direction){
-  const b=$(id);
-  b.addEventListener("pointerdown",e=>{e.preventDefault();move(direction)});
-  ["pointerup","pointerleave","pointercancel"].forEach(ev=>
-    b.addEventListener(ev,()=>{myState.vx=0})
-  );
+function stop(){if(timer)clearInterval(timer);timer=null}
+["pointerup","pointerleave","pointercancel"].forEach(ev=>b.addEventListener(ev,stop));
 }
 bindHold("left",-1);
 bindHold("right",1);
 $("jump").addEventListener("click",jump);
 $("attack").addEventListener("click",attack);
+
+window.addEventListener("keydown",e=>{
+if(["ArrowLeft","ArrowRight","ArrowUp"," "].includes(e.key))e.preventDefault();
+if(e.repeat)return;
+const k=e.key.toLowerCase();
+if(k==="a"||k==="arrowleft")move(-1);
+if(k==="d"||k==="arrowright")move(1);
+if(k==="w"||k==="arrowup")jump();
+if(k===" ")attack();
+});
 </script>
 </body>
 </html>
