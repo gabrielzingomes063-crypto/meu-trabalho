@@ -3,8 +3,8 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Draw Battle | Duelo de Desenhos</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Draw Battle - Duelo de Desenhos</title>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
@@ -12,34 +12,34 @@
 
 <style>
 *{box-sizing:border-box}
-body{margin:0;background:#11111e;color:#fff;font-family:Arial,sans-serif}
-header{text-align:center;padding:25px 12px}
-header h1{margin:0;color:#bd9aff;font-size:38px}
+body{margin:0;background:#11111e;color:white;font-family:Arial,sans-serif}
+header{text-align:center;padding:28px 12px}
+header h1{font-size:38px;color:#bd9aff;margin:0}
 header p{color:#aaa}
 main{width:min(900px,94%);margin:auto;padding-bottom:40px}
-.panel{background:#1e1e30;border:1px solid #35354c;border-radius:18px;padding:24px;margin:16px 0}
+.panel{background:#1e1e30;border:1px solid #35354c;border-radius:18px;padding:25px;margin:18px 0}
 .center{text-align:center}
-input{display:block;width:100%;padding:14px;margin:10px 0;background:#303047;color:white;border:1px solid #45455d;border-radius:10px;font-size:16px}
-button{background:#9362ed;color:white;border:0;border-radius:10px;padding:13px 18px;margin:5px;font-weight:bold;cursor:pointer}
-button:hover{filter:brightness(1.12)}
-button:disabled{opacity:.4;cursor:not-allowed}
 .hidden{display:none!important}
+input{display:block;width:100%;padding:15px;margin:12px 0;background:#303047;color:white;border:1px solid #45455d;border-radius:11px;font-size:17px}
+button{background:#9362ed;color:white;border:0;border-radius:10px;padding:14px 20px;margin:5px;font-size:15px;font-weight:bold;cursor:pointer}
+button:hover{filter:brightness(1.15)}
+button:disabled{opacity:.45;cursor:not-allowed}
 #message,#lobbyMessage,#gameMessage{color:#c5a8ff;min-height:24px}
-#roomCode{font-size:32px;letter-spacing:5px;color:#c5a8ff;font-weight:bold}
+#roomCode{font-size:35px;letter-spacing:6px;color:#c5a8ff;font-weight:bold;margin:15px}
 .players{display:flex;gap:12px;margin:20px 0}
-.player{flex:1;min-width:0;background:#303047;padding:15px;border-radius:12px}
+.player{flex:1;background:#303047;padding:15px;border-radius:12px;overflow-wrap:anywhere}
 .player small{color:#aaa}
-#timer{font-size:38px;font-weight:bold;color:#ffe17c;margin:12px}
-#reference{width:180px;height:150px;background:white;border-radius:10px;display:block;margin:12px auto}
-#canvas{display:block;width:100%;height:auto;background:white;border-radius:12px;touch-action:none}
+hr{border:0;border-top:1px solid #44445a;margin:24px 0}
+#timer{font-size:40px;color:#ffe17c;font-weight:bold;margin:12px}
+#reference{width:180px;max-width:100%;height:auto;background:white;border-radius:10px;display:block;margin:12px auto}
+#canvas{width:100%;height:auto;background:white;border-radius:12px;display:block;touch-action:none}
 .tools,.colors{display:flex;gap:7px;flex-wrap:wrap;margin:12px 0}
-.color{width:30px;height:30px;padding:0;border:3px solid white;border-radius:50%}
-#result{font-size:26px;color:#ffe17c;margin:20px}
-hr{border:0;border-top:1px solid #44445a;margin:22px 0}
+.color{width:34px;height:34px;padding:0;border:3px solid white;border-radius:50%}
+#result{font-size:26px;color:#ffe17c;margin:20px 0}
 </style>
 </head>
-<body>
 
+<body>
 <header>
 <h1>🎨 DRAW BATTLE</h1>
 <p>Dois jogadores. Um desenho. Apenas um vencedor!</p>
@@ -50,11 +50,11 @@ hr{border:0;border-top:1px solid #44445a;margin:22px 0}
 <h2>Entre na batalha!</h2>
 <p>Escolha um apelido para jogar.</p>
 <input id="nickname" maxlength="16" placeholder="Seu apelido">
-<button onclick="createRoom()">CRIAR SALA</button>
+<button id="createButton" onclick="createRoom()">CRIAR SALA</button>
 <hr>
 <p>Seu amigo já criou uma sala?</p>
 <input id="joinCode" maxlength="6" placeholder="Código da sala">
-<button onclick="joinRoom()">ENTRAR NA SALA</button>
+<button id="joinButton" onclick="joinRoom()">ENTRAR NA SALA</button>
 <p id="message">Conectando ao servidor...</p>
 </section>
 
@@ -82,7 +82,7 @@ hr{border:0;border-top:1px solid #44445a;margin:22px 0}
 <section id="game" class="panel hidden">
 <div class="center">
 <h2>✏️ Hora de desenhar!</h2>
-<p>Reproduza o modelo abaixo.</p>
+<p>Observe o modelo e tente reproduzi-lo da melhor maneira!</p>
 <canvas id="reference" width="360" height="300"></canvas>
 <div id="prompt">Desenhe o gato!</div>
 <div id="timer">90</div>
@@ -104,6 +104,7 @@ hr{border:0;border-top:1px solid #44445a;margin:22px 0}
 </div>
 
 <canvas id="canvas" width="900" height="600"></canvas>
+
 <div class="center">
 <button id="finishButton" onclick="finishDrawing()">FINALIZAR DESENHO</button>
 <p id="gameMessage">Boa sorte!</p>
@@ -129,93 +130,86 @@ hr{border:0;border-top:1px solid #44445a;margin:22px 0}
 </main>
 
 <script>
-// ==================================================
-// COLOQUE A CONFIGURAÇÃO REAL DO SEU FIREBASE AQUI
-// ==================================================
-
+// CONFIGURAÇÃO REAL DO SEU FIREBASE
 const firebaseConfig = {
-  apiKey: "SUA_API_KEY",
-  authDomain: "SEU_PROJETO.firebaseapp.com",
-  databaseURL: "https://SEU_PROJETO-default-rtdb.firebaseio.com",
-  projectId: "SEU_PROJETO",
-  appId: "SEU_APP_ID"
+  apiKey: "AIzaSyCiIQA4PLfEX6WwrEFqpEGR_rKKBisk8Cw",
+  authDomain: "draw-battle-60d94.firebaseapp.com",
+  databaseURL: "https://draw-battle-60d94-default-rtdb.firebaseio.com",
+  projectId: "draw-battle-60d94",
+  storageBucket: "draw-battle-60d94.firebasestorage.app",
+  messagingSenderId: "533481028234",
+  appId: "1:533481028234:web:d2fb69123057bcdd3e4b73",
+  measurementId: "G-4ZZY2234EY"
 };
-
-// ==================================================
-
-let app, auth, db, user;
-let roomId = null;
-let roomRef = null;
-let isHost = false;
-let myName = "";
-let roomListener = null;
-let timerInterval = null;
-let submitted = false;
-let seconds = 90;
-let currentRoom = null;
 
 const $ = id => document.getElementById(id);
 
+let db, auth, user;
+let roomId = "";
+let roomRef = null;
+let isHost = false;
+let myName = "";
+let currentRoom = null;
+let timerInterval = null;
+let submitted = false;
+let finalizing = false;
+let color = "#111111";
+let tool = "pen";
+let drawing = false;
+let lastPoint = null;
+
 function show(id) {
-  ["home","lobby","game","results"].forEach(name =>
-    $(name).classList.add("hidden")
+  ["home","lobby","game","results"].forEach(x =>
+    $(x).classList.add("hidden")
   );
   $(id).classList.remove("hidden");
 }
 
-function setMessage(message) {
-  $("message").textContent = message;
+function message(text) {
+  $("message").textContent = text;
 }
 
-function randomCode() {
-  return Math.random().toString(36).substring(2,8).toUpperCase();
-}
-
-function getName() {
-  return $("nickname").value.trim().slice(0,16) || "Jogador";
-}
-
-// Inicialização do Firebase
+// Inicializar Firebase
 async function initialize() {
   try {
-    if (
-      firebaseConfig.apiKey === "SUA_API_KEY" ||
-      firebaseConfig.projectId === "SEU_PROJETO" ||
-      !firebaseConfig.databaseURL ||
-      firebaseConfig.databaseURL.includes("SEU_PROJETO")
-    ) {
-      setMessage("Configure o Firebase antes de jogar.");
-      return;
-    }
-
-    app = firebase.initializeApp(firebaseConfig);
+    firebase.initializeApp(firebaseConfig);
     auth = firebase.auth();
     db = firebase.database();
 
     const credential = await auth.signInAnonymously();
     user = credential.user;
 
-    setMessage("Conectado! Você já pode jogar.");
+    message("Conectado! Você já pode jogar.");
   } catch (error) {
-    setMessage("Erro Firebase: " + error.message);
+    message("Erro de conexão: " + error.message);
   }
 }
 
 initialize();
 
-// Criar sala
+function getName() {
+  return $("nickname").value.trim().slice(0,16) || "Jogador";
+}
+
+function randomCode() {
+  return Math.random().toString(36).substring(2,8).toUpperCase();
+}
+
+// CRIAR SALA
 async function createRoom() {
   if (!user) {
-    setMessage("A conexão ainda não está pronta. Verifique o Firebase.");
+    message("Aguarde a conexão com o Firebase.");
     return;
   }
 
   myName = getName();
   isHost = true;
-  roomId = randomCode();
-  roomRef = db.ref("rooms/" + roomId);
+  $("createButton").disabled = true;
 
   try {
+    roomId = randomCode();
+    roomRef = db.ref("rooms/" + roomId);
+
     await roomRef.set({
       status: "waiting",
       hostUid: user.uid,
@@ -231,14 +225,15 @@ async function createRoom() {
 
     openLobby();
   } catch (error) {
-    setMessage("Não foi possível criar a sala: " + error.message);
+    message("Erro ao criar sala: " + error.message);
+    $("createButton").disabled = false;
   }
 }
 
-// Entrar em sala
+// ENTRAR NA SALA
 async function joinRoom() {
   if (!user) {
-    setMessage("A conexão ainda não está pronta. Verifique o Firebase.");
+    message("Aguarde a conexão com o Firebase.");
     return;
   }
 
@@ -246,25 +241,29 @@ async function joinRoom() {
   roomId = $("joinCode").value.trim().toUpperCase();
 
   if (!/^[A-Z0-9]{6}$/.test(roomId)) {
-    setMessage("Digite um código válido de 6 caracteres.");
+    message("Digite um código válido de 6 caracteres.");
     return;
   }
 
-  roomRef = db.ref("rooms/" + roomId);
-  setMessage("Procurando sala...");
+  $("joinButton").disabled = true;
+  message("Procurando sala...");
 
   try {
+    roomRef = db.ref("rooms/" + roomId);
+
     const snapshot = await roomRef.once("value");
 
     if (!snapshot.exists()) {
-      setMessage("Sala não encontrada. Confira o código.");
+      message("Sala não encontrada. Confira o código.");
+      $("joinButton").disabled = false;
       return;
     }
 
     const room = snapshot.val();
 
     if (room.status !== "waiting") {
-      setMessage("Essa partida já começou ou terminou.");
+      message("Essa partida já começou ou terminou.");
+      $("joinButton").disabled = false;
       return;
     }
 
@@ -282,7 +281,8 @@ async function joinRoom() {
     });
 
     if (!result.committed) {
-      setMessage("Essa sala já tem dois jogadores.");
+      message("Essa sala já possui dois jogadores.");
+      $("joinButton").disabled = false;
       return;
     }
 
@@ -290,21 +290,20 @@ async function joinRoom() {
     openLobby();
 
   } catch (error) {
-    setMessage("Erro ao entrar: " + error.message);
+    message("Erro ao entrar: " + error.message);
+    $("joinButton").disabled = false;
   }
 }
 
-// Abrir sala e acompanhar mudanças
+// ACOMPANHAR A SALA
 function openLobby() {
   show("lobby");
   $("roomCode").textContent = roomId;
   $("lobbyMessage").textContent = "Conectando à sala...";
 
-  if (roomListener) roomRef.off("value", roomListener);
-
-  roomListener = snapshot => {
+  roomRef.on("value", snapshot => {
     if (!snapshot.exists()) {
-      $("lobbyMessage").textContent = "A sala não existe mais.";
+      $("lobbyMessage").textContent = "Sala não encontrada.";
       return;
     }
 
@@ -317,27 +316,26 @@ function openLobby() {
     $("guestName").textContent = guest?.name || "Aguardando...";
 
     if (guest) {
-      $("lobbyMessage").textContent = "Os dois jogadores estão conectados!";
+      $("lobbyMessage").textContent =
+        "Os dois jogadores estão conectados!";
     } else {
-      $("lobbyMessage").textContent = "Esperando o segundo jogador...";
+      $("lobbyMessage").textContent =
+        "Esperando o segundo jogador...";
     }
 
     $("startButton").disabled =
       !isHost || !guest || currentRoom.status !== "waiting";
 
     if (currentRoom.status === "playing") {
-      if ($("game").classList.contains("hidden")) {
-        beginGame();
-      }
+      beginGame();
     }
 
     if (currentRoom.status === "finished") {
       displayResults(currentRoom);
     }
-  };
-
-  roomRef.on("value", roomListener, error => {
-    $("lobbyMessage").textContent = "Erro na sala: " + error.message;
+  }, error => {
+    $("lobbyMessage").textContent =
+      "Erro ao acompanhar sala: " + error.message;
   });
 }
 
@@ -350,7 +348,7 @@ async function copyCode() {
   }
 }
 
-// Iniciar partida
+// COMEÇAR PARTIDA
 async function startGame() {
   if (!isHost || !currentRoom?.players?.guest) return;
 
@@ -365,7 +363,7 @@ async function startGame() {
   }
 }
 
-// Desenho de referência: gato
+// MODELO DO DESENHO
 const canvas = $("canvas");
 const ctx = canvas.getContext("2d");
 const reference = $("reference");
@@ -374,6 +372,7 @@ const rctx = reference.getContext("2d");
 function drawTarget() {
   rctx.fillStyle = "white";
   rctx.fillRect(0,0,360,300);
+
   rctx.strokeStyle = "#171717";
   rctx.lineWidth = 9;
   rctx.lineCap = "round";
@@ -423,37 +422,39 @@ function drawTarget() {
   rctx.stroke();
 }
 
+// INICIAR JOGO
 function beginGame() {
-  if (!roomRef || $("game").classList.contains("hidden") === false) return;
+  if (!$("game").classList.contains("hidden")) return;
 
   submitted = false;
-  seconds = 90;
+  finalizing = false;
+
+  show("game");
   clearCanvas();
   drawTarget();
-  show("game");
 
-  $("timer").textContent = seconds;
-  $("gameMessage").textContent = "Faça seu desenho!";
   $("finishButton").disabled = false;
+  $("gameMessage").textContent = "Faça seu desenho!";
 
   clearInterval(timerInterval);
 
   timerInterval = setInterval(() => {
-    seconds--;
-    $("timer").textContent = seconds;
+    if (!currentRoom?.startedAt) return;
 
-    if (seconds <= 0) {
+    const elapsed = Math.floor(
+      (Date.now() - currentRoom.startedAt) / 1000
+    );
+
+    const remaining = Math.max(0, 90 - elapsed);
+    $("timer").textContent = remaining;
+
+    if (remaining <= 0) {
       finishDrawing();
     }
-  }, 1000);
+  }, 500);
 }
 
-// Ferramentas
-let color = "#111111";
-let tool = "pen";
-let drawing = false;
-let lastPoint = null;
-
+// FERRAMENTAS
 function clearCanvas() {
   ctx.fillStyle = "white";
   ctx.fillRect(0,0,canvas.width,canvas.height);
@@ -470,6 +471,7 @@ function setTool(value) {
 
 function getPoint(event) {
   const rect = canvas.getBoundingClientRect();
+
   return {
     x: (event.clientX - rect.left) * canvas.width / rect.width,
     y: (event.clientY - rect.top) * canvas.height / rect.height
@@ -478,6 +480,7 @@ function getPoint(event) {
 
 canvas.addEventListener("pointerdown", event => {
   if (submitted) return;
+
   drawing = true;
   lastPoint = getPoint(event);
   canvas.setPointerCapture(event.pointerId);
@@ -503,13 +506,14 @@ canvas.addEventListener("pointermove", event => {
 canvas.addEventListener("pointerup", () => drawing = false);
 canvas.addEventListener("pointercancel", () => drawing = false);
 
-// Pontuação aproximada por comparação de pixels
+// CALCULAR SEMELHANÇA VISUAL
 function calculateScore(imageData) {
   return new Promise(resolve => {
     const image = new Image();
 
     image.onload = () => {
-      const size = 48;
+      const size = 64;
+
       const a = document.createElement("canvas");
       const b = document.createElement("canvas");
 
@@ -535,6 +539,7 @@ function calculateScore(imageData) {
       for (let i=0; i<A.length; i+=4) {
         const pa = A[i] < 150;
         const pb = B[i] < 150;
+
         if (pa && pb) intersection++;
         if (pa || pb) union++;
       }
@@ -547,16 +552,17 @@ function calculateScore(imageData) {
   });
 }
 
-// Finalizar desenho
+// ENVIAR DESENHO
 async function finishDrawing() {
-  if (submitted || !roomRef) return;
+  if (submitted || finalizing || !roomRef) return;
 
-  submitted = true;
-  clearInterval(timerInterval);
+  finalizing = true;
   $("finishButton").disabled = true;
   $("gameMessage").textContent = "Calculando sua pontuação...";
 
   try {
+    clearInterval(timerInterval);
+
     const imageData = canvas.toDataURL("image/jpeg",0.65);
     const score = await calculateScore(imageData);
 
@@ -567,50 +573,62 @@ async function finishDrawing() {
       score: score
     });
 
+    submitted = true;
     $("gameMessage").textContent =
       "Desenho enviado! Esperando seu adversário...";
 
   } catch (error) {
-    submitted = false;
+    finalizing = false;
     $("finishButton").disabled = false;
-    $("gameMessage").textContent = "Erro ao enviar: " + error.message;
+    $("gameMessage").textContent =
+      "Erro ao enviar: " + error.message;
   }
 }
 
-// Verificar se ambos terminaram
+// RESULTADO
 async function checkResults(room) {
+  if (!isHost || finalizing) return;
+
   const host = room.players?.host;
   const guest = room.players?.guest;
 
   if (!host?.submitted || !guest?.submitted) return;
 
-  const finalResult = {
-    status: "finished",
-    result: {
-      hostName: host.name,
-      guestName: guest.name,
-      hostScore: host.score,
-      guestScore: guest.score
-    }
-  };
+  finalizing = true;
 
-  if (room.status === "playing" && isHost) {
-    await roomRef.update(finalResult);
+  try {
+    await roomRef.update({
+      status: "finished",
+      result: {
+        hostName: host.name,
+        guestName: guest.name,
+        hostScore: host.score,
+        guestScore: guest.score
+      }
+    });
+  } catch (error) {
+    finalizing = false;
+    $("gameMessage").textContent =
+      "Erro ao finalizar partida: " + error.message;
   }
 }
 
-// Mostrar resultado
 function displayResults(room) {
-  const result = room.result;
-  if (!result) return;
+  if (!room.result) return;
 
   clearInterval(timerInterval);
   show("results");
 
+  const result = room.result;
+
   $("resultHost").textContent = result.hostName;
   $("resultGuest").textContent = result.guestName;
-  $("scoreHost").textContent = result.hostScore + "% de semelhança";
-  $("scoreGuest").textContent = result.guestScore + "% de semelhança";
+
+  $("scoreHost").textContent =
+    result.hostScore + "% de semelhança";
+
+  $("scoreGuest").textContent =
+    result.guestScore + "% de semelhança";
 
   let winner = "🤝 Empate!";
 
@@ -623,34 +641,10 @@ function displayResults(room) {
   }
 
   $("result").textContent = winner;
+
   $("winner").textContent =
-    "A pontuação é uma estimativa automática de semelhança visual.";
+    "Pontuação estimada pela comparação dos desenhos.";
 }
-
-// Acompanhar pontuação dos dois jogadores
-function watchResults() {
-  if (!roomRef) return;
-
-  roomRef.child("players").on("value", snapshot => {
-    const players = snapshot.val();
-    if (!players) return;
-
-    checkResults({
-      status: currentRoom?.status,
-      players: players
-    }).catch(error => {
-      $("gameMessage").textContent = "Erro no resultado: " + error.message;
-    });
-  });
-}
-
-// Ativar observador quando entrar no jogo
-const originalBeginGame = beginGame;
-beginGame = function() {
-  if (!$("game").classList.contains("hidden")) return;
-  originalBeginGame();
-  watchResults();
-};
 </script>
 </body>
 </html>
