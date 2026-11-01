@@ -3,41 +3,47 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Stickman Battle - Ragdoll</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stickman Battle - Ultimate Physics</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.20.0/matter.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+
 <style>
 *{box-sizing:border-box}
-body{margin:0;background:#10111c;color:white;font-family:Arial}
-header{text-align:center;padding:18px}
-h1{color:#bb9aff;margin:5px;font-size:34px}
-main{max-width:950px;margin:auto;padding:12px}
-.panel{background:#202135;border:1px solid #383951;border-radius:15px;padding:20px;margin:14px 0}
+body{margin:0;background:#10111c;color:white;font-family:Arial,sans-serif}
+header{text-align:center;padding:15px}
+h1{color:#bd9aff;font-size:34px;margin:5px}
+main{max-width:1000px;margin:auto;padding:10px}
+.panel{background:#202135;border:1px solid #383951;border-radius:15px;padding:20px;margin:12px 0}
 .center{text-align:center}
 .hidden{display:none!important}
 input{width:100%;padding:13px;background:#303249;color:white;border:1px solid #50516b;border-radius:9px;margin:8px 0;font-size:16px}
-button{border:0;background:#9667ef;color:white;padding:13px 17px;border-radius:9px;font-weight:bold;cursor:pointer;margin:4px}
+button{border:0;background:#9667ef;color:white;padding:13px 18px;border-radius:9px;font-weight:bold;cursor:pointer;margin:4px}
 button:disabled{opacity:.5}
 #status{color:#c8aaff}
 #code{font-size:34px;color:#c8aaff;letter-spacing:6px}
 #weaponCanvas{background:white;width:100%;max-width:500px;border-radius:10px;touch-action:none}
-#arena{width:100%;background:#e9e9f1;border-radius:12px;display:block}
-.healthrow{display:flex;gap:12px;margin:12px 0}
+#gameWrap{position:relative;overflow:hidden;border-radius:12px;background:#9bc9e8}
+#arena{width:100%;height:auto;display:block;touch-action:none}
+#hud{display:flex;gap:10px;margin:10px 0}
 .healthbox{flex:1;background:#303249;padding:10px;border-radius:10px}
 .bar{height:15px;background:#555;border-radius:20px;overflow:hidden;margin-top:8px}
-.fill{height:100%;background:#40d77b;width:100%;transition:width .2s}
+.fill{height:100%;background:#40d77b;width:100%;transition:width .15s}
 #controls{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin:12px}
-#controls button{min-width:65px;font-size:18px}
+#controls button{min-width:65px;font-size:18px;touch-action:none}
 small{color:#aaa}
+#mapInfo{color:#bba5ff;text-align:center;font-size:12px}
 </style>
 </head>
 <body>
 <header>
 <h1>⚔️ STICKMAN BATTLE</h1>
-<p>Desenhe sua arma e lute com física ragdoll!</p>
+<p>ULTIMATE PHYSICS ARENA</p>
 </header>
+
 <main>
 <section id="home" class="panel center">
 <h2>Entrar na batalha</h2>
@@ -46,7 +52,7 @@ small{color:#aaa}
 <hr>
 <input id="roomInput" maxlength="6" placeholder="Código da sala">
 <button onclick="joinRoom()">ENTRAR NA SALA</button>
-<p id="status">Conectando...</p>
+<p id="status">Conectando ao servidor...</p>
 </section>
 
 <section id="lobby" class="panel center hidden">
@@ -56,28 +62,26 @@ small{color:#aaa}
 <button onclick="copyCode()">COPIAR CÓDIGO</button>
 <h3 id="players">Esperando adversário...</h3>
 <p id="lobbyStatus"></p>
-<button id="goWeapon" onclick="openWeapon()" disabled>CRIAR MINHA ARMA</button>
+<button id="goWeapon" onclick="openWeapon()" disabled>DESENHAR ARMA</button>
 </section>
 
 <section id="weapon" class="panel center hidden">
-<h2>🎨 Desenhe sua arma</h2>
-<p>Desenhe uma espada, machado, martelo ou qualquer arma!</p>
+<h2>🎨 Crie sua arma</h2>
+<p>Desenhe livremente usando o mouse ou o dedo.</p>
 <canvas id="weaponCanvas" width="500" height="220"></canvas>
-<div>
+<br>
 <button onclick="clearWeapon()">APAGAR</button>
 <button onclick="saveWeapon()">EQUIPAR ARMA</button>
-</div>
 <p id="weaponStatus"></p>
 </section>
 
 <section id="waiting" class="panel center hidden">
-<h2>⚔️ Preparado?</h2>
+<h2>⚔️ Preparado para lutar?</h2>
 <p id="waitingStatus">Esperando o adversário...</p>
 </section>
 
 <section id="fight" class="panel hidden">
-<div class="center"><h2>🔥 ARENA RAGDOLL</h2></div>
-<div class="healthrow">
+<div id="hud">
 <div class="healthbox">
 <strong id="name0">Jogador 1</strong>
 <div class="bar"><div id="hp0" class="fill"></div></div>
@@ -87,10 +91,14 @@ small{color:#aaa}
 <div class="bar"><div id="hp1" class="fill"></div></div>
 </div>
 </div>
-<canvas id="arena" width="900" height="440"></canvas>
+
+<div id="gameWrap">
+<canvas id="arena" width="1000" height="600"></canvas>
+</div>
+<p id="mapInfo">Arena: 4.000 unidades de largura</p>
 <div id="controls">
 <button id="left">◀</button>
-<button id="jump">⬆</button>
+<button id="jump">⬆ PULAR</button>
 <button id="right">▶</button>
 <button id="attack">⚔️ ATACAR</button>
 </div>
@@ -106,6 +114,7 @@ small{color:#aaa}
 </main>
 
 <script>
+// FIREBASE
 const firebaseConfig={
 apiKey:"AIzaSyCiIQA4PLfEX6WwrEFqpEGR_rKKBisk8Cw",
 authDomain:"draw-battle-60d94.firebaseapp.com",
@@ -118,25 +127,22 @@ measurementId:"G-4ZZY2234EY"
 };
 
 const $=id=>document.getElementById(id);
+const {Engine,Bodies,Body,Composite,Constraint,Events}=Matter;
+
 let db,user,roomRef,roomId,slot,opponentSlot;
 let connected=false,started=false,ended=false;
-let roomData=null,otherState=null;
+let roomData=null,worldEngine=null;
 let myName="",myWeapon=[],otherWeapon=[];
-let gameLoop=null,syncLoop=null,lastFrame=0,lastAttack=0;
+let myBody=null,enemyData=null;
+let camera={x:0,y:0};
+let lastAttack=0,lastSync=0;
 let seenAttacks={};
-
-function makeState(x){
-return {
-x,y:320,vx:0,vy:0,hp:100,
-face:1,onGround:true,stun:0,
-attackUntil:0,attackPower:0,
-bodyAngle:0,bodyVelocity:0,
-armL:0,armR:0,legL:0,legR:0,
-armLV:0,armRV:0,legLV:0,legRV:0,
-knock:0
-};
-}
-let myState=makeState(150);
+let platforms=[];
+let localHealth=100;
+let attackAnimation=0;
+let lastFrame=0;
+let keys={};
+let moveDirection=0;
 
 function show(id){
 ["home","lobby","weapon","waiting","fight","end"].forEach(x=>$(x).classList.add("hidden"));
@@ -166,7 +172,6 @@ if(!connected)return;
 myName=nameValue();
 slot="p1";opponentSlot="p2";
 roomId=newCode();
-myState=makeState(180);
 roomRef=db.ref("rooms/"+roomId);
 try{
 await roomRef.set({
@@ -174,7 +179,7 @@ type:"stickfight",
 status:"waiting",
 createdAt:Date.now(),
 players:{
-p1:{uid:user.uid,name:myName,weapon:null,state:myState},
+p1:{uid:user.uid,name:myName,weapon:null,state:null},
 p2:null
 },
 attacks:{}
@@ -200,9 +205,8 @@ if(snap.val().status!=="waiting"||snap.val().players?.p2){
 $("status").textContent="Sala cheia ou partida iniciada.";return;
 }
 slot="p2";opponentSlot="p1";
-myState=makeState(720);
 const tx=await roomRef.child("players/p2").transaction(old=>{
-if(old===null)return {uid:user.uid,name:myName,weapon:null,state:myState};
+if(old===null)return {uid:user.uid,name:myName,weapon:null,state:null};
 return;
 });
 if(!tx.committed){$("status").textContent="Sala cheia.";return}
@@ -224,7 +228,6 @@ if(roomData.status==="fight"&&!started)beginFight();
 if(roomData.status==="finished")showWinner();
 });
 }
-
 async function copyCode(){
 try{await navigator.clipboard.writeText(roomId);alert("Código copiado!")}
 catch{alert("Código: "+roomId)}
@@ -284,283 +287,471 @@ if(!myWeapon.length){$("weaponStatus").textContent="Desenhe sua arma!";return}
 try{
 await roomRef.child("players/"+slot+"/weapon").set(myWeapon);
 show("waiting");
-$("waitingStatus").textContent="Arma equipada! Esperando o adversário...";
 watchWeapons();
 }catch(e){$("weaponStatus").textContent=e.message}
 }
-
 function watchWeapons(){
 roomRef.child("players").on("value",snap=>{
 const p=snap.val()||{};
 otherWeapon=p[opponentSlot]?.weapon||[];
 if(p.p1?.weapon&&p.p2?.weapon){
-roomRef.child("status").transaction(s=>{
-if(s==="waiting")return "fight";
-return s;
-});
+roomRef.child("status").transaction(s=>s==="waiting"?"fight":s);
 }else{
 $("waitingStatus").textContent="Esperando o adversário desenhar...";
 }
 });
 }
 
-// FÍSICA RAGDOLL
-const GRAVITY=1450;
-const FLOOR=320;
+// MUNDO FÍSICO
+const WORLD_WIDTH=4000;
+const WORLD_HEIGHT=1300;
+const FLOOR_Y=1000;
 
-function physics(dt){
-const s=myState;
-s.vy+=GRAVITY*dt;
-
-// Resistência do ar
-s.vx*=Math.pow(s.onGround?.91:.995,dt*60);
-s.vy*=Math.pow(.999,dt*60);
-
-// Movimento principal
-s.x+=s.vx*dt;
-s.y+=s.vy*dt;
-
-// Colisão com o chão e quique
-if(s.y>=FLOOR){
-if(!s.onGround&&Math.abs(s.vy)>180){
-s.vy=-s.vy*.17;
-s.vx*=.82;
-}else{
-s.vy=0;
-}
-s.y=FLOOR;
-s.onGround=true;
-}else{
-s.onGround=false;
+function createPlatform(x,y,w,h,color="#777d91"){
+const b=Bodies.rectangle(x,y,w,h,{
+isStatic:true,
+friction:.85,
+restitution:.05,
+label:"platform",
+render:{fillStyle:color}
+});
+Composite.add(worldEngine.world,b);
+platforms.push(b);
+return b;
 }
 
-// Paredes
-if(s.x<48){s.x=48;s.vx=Math.abs(s.vx)*.5}
-if(s.x>852){s.x=852;s.vx=-Math.abs(s.vx)*.5}
+function createWorld(){
+worldEngine=Engine.create({
+enableSleeping:false,
+positionIterations:10,
+velocityIterations:10,
+constraintIterations:5
+});
+worldEngine.gravity.y=1.15;
+worldEngine.gravity.scale=.001;
 
-// Movimento do corpo: o tronco reage ao impulso
-const targetBody=Math.max(-.75,Math.min(.75,-s.vx*.0015));
-spring("bodyAngle","bodyVelocity",targetBody,13,4,dt);
+platforms=[];
+createPlatform(WORLD_WIDTH/2,FLOOR_Y+35,WORLD_WIDTH,70,"#68717d");
 
-// Braços e pernas: articulações com mola
-const moving=Math.min(1,Math.abs(s.vx)/300);
-const airborne=s.onGround?0:1;
-const swing=Math.sin(Date.now()*.012)*moving*.75;
+// Plataformas elevadas
+createPlatform(650,820,350,35,"#626b7c");
+createPlatform(1250,690,300,35,"#626b7c");
+createPlatform(1950,830,450,35,"#626b7c");
+createPlatform(2750,680,350,35,"#626b7c");
+createPlatform(3450,820,400,35,"#626b7c");
 
-spring("armL","armLV",swing+airborne*.4,12,3,dt);
-spring("armR","armRV",-swing-airborne*.3,12,3,dt);
-spring("legL","legLV",-swing-airborne*.5,10,3,dt);
-spring("legR","legRV",swing+airborne*.5,10,3,dt);
+// Paredes laterais
+createPlatform(-40,450,80,1100,"#434b60");
+createPlatform(WORLD_WIDTH+40,450,80,1100,"#434b60");
 
-// Recuperação depois do golpe
-if(s.stun>0)s.stun=Math.max(0,s.stun-dt);
-if(s.knock>0)s.knock=Math.max(0,s.knock-dt);
+// Obstáculos
+createPlatform(950,950,100,80,"#8a6c59");
+createPlatform(2250,950,150,80,"#8a6c59");
+createPlatform(3150,950,100,80,"#8a6c59");
+
 }
 
-function spring(angle,velocity,target,strength,damping,dt){
-const s=myState;
-s[velocity]+=(target-s[angle])*strength*dt;
-s[velocity]*=Math.max(0,1-damping*dt);
-s[angle]+=s[velocity]*dt;
+function addPart(x,y,w,h,options={}){
+return Bodies.rectangle(x,y,w,h,{
+density:options.density||.002,
+friction:.8,
+frictionStatic:.9,
+frictionAir:.025,
+restitution:options.restitution??.05,
+collisionFilter:{group:options.group||0},
+label:options.label||"bodypart",
+});
 }
 
-// PULO
+function connect(a,b,ax,ay,bx,by,length=0,stiffness=.85){
+const c=Constraint.create({
+bodyA:a,bodyB:b,
+pointA:{x:ax,y:ay},
+pointB:{x:bx,y:by},
+length,stiffness,
+damping:.12
+});
+Composite.add(worldEngine.world,c);
+return c;
+}
+
+function createRagdoll(x,y){
+const group=Body.nextGroup(true);
+const parts={};
+
+parts.head=Bodies.circle(x,y-105,19,{
+density:.002,friction:.8,frictionAir:.025,
+collisionFilter:{group},label:"head"
+});
+parts.chest=addPart(x,y-55,32,65,{group,density:.003,label:"chest"});
+parts.hip=addPart(x,y-5,28,28,{group,density:.003,label:"hip"});
+
+parts.leftUpperArm=addPart(x-35,y-65,14,38,{group,label:"arm"});
+parts.leftForearm=addPart(x-55,y-35,12,36,{group,label:"arm"});
+parts.rightUpperArm=addPart(x+35,y-65,14,38,{group,label:"arm"});
+parts.rightForearm=addPart(x+55,y-35,12,36,{group,label:"arm"});
+
+parts.leftThigh=addPart(x-13,y+25,17,43,{group,label:"leg"});
+parts.leftShin=addPart(x-18,y+65,14,42,{group,label:"leg"});
+parts.rightThigh=addPart(x+13,y+25,17,43,{group,label:"leg"});
+parts.rightShin=addPart(x+18,y+65,14,42,{group,label:"leg"});
+
+Composite.add(worldEngine.world,Object.values(parts));
+
+const joints=[];
+joints.push(connect(parts.head,parts.chest,0,18,0,-31));
+joints.push(connect(parts.chest,parts.hip,0,31,0,-10));
+joints.push(connect(parts.chest,parts.leftUpperArm,-13,-22,0,-17));
+joints.push(connect(parts.leftUpperArm,parts.leftForearm,0,17,0,-17));
+joints.push(connect(parts.chest,parts.rightUpperArm,13,-22,0,-17));
+joints.push(connect(parts.rightUpperArm,parts.rightForearm,0,17,0,-17));
+joints.push(connect(parts.hip,parts.leftThigh,-8,10,0,-19));
+joints.push(connect(parts.leftThigh,parts.leftShin,0,19,0,-19));
+joints.push(connect(parts.hip,parts.rightThigh,8,10,0,-19));
+joints.push(connect(parts.rightThigh,parts.rightShin,0,19,0,-19));
+
+return {parts,joints,weapon:null};
+}
+
+function partPosition(body){
+return {x:body.position.x,y:body.position.y,a:body.angle};
+}
+function getRagdollState(r){
+const p=r.parts;
+return {
+head:partPosition(p.head),
+chest:partPosition(p.chest),
+hip:partPosition(p.hip),
+la:partPosition(p.leftUpperArm),
+lf:partPosition(p.leftForearm),
+ra:partPosition(p.rightUpperArm),
+rf:partPosition(p.rightForearm),
+lt:partPosition(p.leftThigh),
+ls:partPosition(p.leftShin),
+rt:partPosition(p.rightThigh),
+rs:partPosition(p.rightShin)
+};
+}
+function applyBodyPosition(body,s){
+if(!s)return;
+Body.setPosition(body,{x:s.x,y:s.y});
+Body.setAngle(body,s.a||0);
+}
+function applyRagdollState(r,s){
+if(!s)return;
+const p=r.parts;
+applyBodyPosition(p.head,s.head);
+applyBodyPosition(p.chest,s.chest);
+applyBodyPosition(p.hip,s.hip);
+applyBodyPosition(p.leftUpperArm,s.la);
+applyBodyPosition(p.leftForearm,s.lf);
+applyBodyPosition(p.rightUpperArm,s.ra);
+applyBodyPosition(p.rightForearm,s.rf);
+applyBodyPosition(p.leftThigh,s.lt);
+applyBodyPosition(p.leftShin,s.ls);
+applyBodyPosition(p.rightThigh,s.rt);
+applyBodyPosition(p.rightShin,s.rs);
+}
+
+// CONTROLES E IMPULSOS
+function centerOf(r){
+return r.parts.chest.position;
+}
+function move(d){
+if(!started||ended||!myBody)return;
+const p=myBody.parts;
+const chest=p.chest;
+const speed=0.0015;
+Body.applyForce(chest,chest.position,{x:d*speed,y:0});
+}
 function jump(){
-const s=myState;
-if(!started||ended||!s.onGround||s.stun>0)return;
-s.vy=-650;
-s.vx+=s.face*55;
-s.onGround=false;
-s.armLV-=2;
-s.armRV+=2;
+if(!started||ended||!myBody)return;
+const p=myBody.parts;
+const hip=p.hip;
+if(Math.abs(hip.velocity.y)<1.5){
+Body.applyForce(hip,hip.position,{x:0,y:-.075});
+Body.applyForce(p.leftThigh,p.leftThigh.position,{x:0,y:-.025});
+Body.applyForce(p.rightThigh,p.rightThigh.position,{x:0,y:-.025});
+}
 }
 
-// IMPACTO
-function receiveHit(direction,force=520,damage=12){
-const s=myState;
-s.hp=Math.max(0,s.hp-damage);
-s.vx+=direction*force;
-s.vy-=force*.65;
-s.bodyVelocity+=-direction*3.5;
-s.armLV+=direction*5;
-s.armRV-=direction*5;
-s.legLV-=direction*2;
-s.legRV+=direction*2;
-s.stun=.45;
-s.knock=.5;
-syncState();
-if(s.hp<=0)finishGame(opponentSlot);
-}
-
-// ATAQUE
-async function attack(){
-if(!started||ended||Date.now()-lastAttack<750)return;
+function attack(){
+if(!started||ended||!myBody||Date.now()-lastAttack<750)return;
 lastAttack=Date.now();
-myState.attackUntil=Date.now()+350;
-myState.vx+=myState.face*110;
-myState.armRV-=2.5;
-myState.bodyVelocity+=myState.face*1.5;
-try{
-await roomRef.child("attacks").push({
-by:slot,x:myState.x,y:myState.y,
-at:Date.now(),damage:15
+attackAnimation=Date.now()+350;
+
+const chest=myBody.parts.chest;
+const facing=slot==="p1"?1:-1;
+Body.applyForce(chest,chest.position,{x:facing*.025,y:-.004});
+
+roomRef.child("attacks").push({
+by:slot,
+x:chest.position.x,
+y:chest.position.y,
+facing,
+at:Date.now(),
+damage:15
 });
-}catch(e){}
 }
 
-// DESENHO DO RAGDOLL
-const arena=$("arena"),ac=arena.getContext("2d");
-
-function limb(x1,y1,x2,y2,width=9){
-ac.lineWidth=width;
-ac.beginPath();ac.moveTo(x1,y1);ac.lineTo(x2,y2);ac.stroke();
+// RECEBER GOLPE
+function receiveHit(direction,damage=15){
+if(ended||!myBody)return;
+localHealth=Math.max(0,localHealth-damage);
+const p=myBody.parts;
+const force=.07;
+Body.applyForce(p.chest,p.chest.position,{x:direction*force,y:-.045});
+Body.applyForce(p.head,p.head.position,{x:direction*.025,y:-.025});
+Body.applyForce(p.hip,p.hip.position,{x:direction*.035,y:-.02});
+Body.applyTorque(p.chest,direction*.025);
+Body.applyTorque(p.head,direction*.02);
+syncState();
+updateHealth();
+if(localHealth<=0)finishGame(opponentSlot);
 }
 
-function drawWeapon(weapon,x,y,angle,face){
+function updateHealth(){
+if(slot==="p1"){
+$("hp0").style.width=localHealth+"%";
+}else{
+$("hp1").style.width=localHealth+"%";
+}
+}
+
+// SINCRONIZAÇÃO
+function syncState(){
+if(!roomRef||!started||!myBody||ended)return;
+const state=getRagdollState(myBody);
+state.hp=localHealth;
+state.time=Date.now();
+roomRef.child("players/"+slot+"/state").set(state).catch(()=>{});
+}
+
+// DESENHO DO MUNDO
+const canvas=$("arena");
+const ctx=canvas.getContext("2d");
+const VIEW_W=1000,VIEW_H=600;
+
+function drawLine(a,b,width=9,color="#20202d"){
+ctx.strokeStyle=color;
+ctx.lineWidth=width;
+ctx.lineCap="round";
+ctx.beginPath();
+ctx.moveTo(a.x,a.y);
+ctx.lineTo(b.x,b.y);
+ctx.stroke();
+}
+function drawCircle(p,r,color="#20202d"){
+ctx.fillStyle=color;
+ctx.beginPath();
+ctx.arc(p.x,p.y,r,0,Math.PI*2);
+ctx.fill();
+}
+function drawWeaponAt(p,weapon){
 if(!weapon?.length)return;
-ac.save();
-ac.translate(x,y);
-ac.rotate(angle);
-ac.scale(face*.34,.34);
-ac.strokeStyle="#29232e";
-ac.lineWidth=13;
-ac.lineCap="round";
-weapon.forEach(stroke=>{
-if(stroke.length<2)return;
-ac.beginPath();
-ac.moveTo(stroke[0].x-250,stroke[0].y-110);
-stroke.slice(1).forEach(p=>ac.lineTo(p.x-250,p.y-110));
-ac.stroke();
+ctx.save();
+ctx.translate(p.x,p.y);
+ctx.rotate(-.4);
+ctx.scale(.28,.28);
+ctx.strokeStyle="#25232b";
+ctx.lineWidth=13;
+ctx.lineCap="round";
+weapon.forEach(s=>{
+if(s.length<2)return;
+ctx.beginPath();
+ctx.moveTo(s[0].x-250,s[0].y-110);
+s.slice(1).forEach(q=>ctx.lineTo(q.x-250,q.y-110));
+ctx.stroke();
 });
-ac.restore();
+ctx.restore();
 }
 
-function drawRagdoll(s,weapon,color){
-ac.save();
-ac.translate(s.x,s.y);
-ac.rotate(s.bodyAngle);
-ac.strokeStyle=color;
-ac.fillStyle=color;
-ac.lineWidth=9;
-ac.lineCap="round";
-ac.lineJoin="round";
+function drawRagdoll(s,color,weapon){
+if(!s)return;
+const point=k=>s[k]&&({x:s[k].x,y:s[k].y});
+const head=point("head"),chest=point("chest"),hip=point("hip");
+if(!head||!chest||!hip)return;
+ctx.save();
+ctx.strokeStyle=color;
+ctx.fillStyle=color;
+ctx.lineWidth=10;
+ctx.lineCap="round";
+ctx.lineJoin="round";
 
-const headY=-103;
-const shoulderY=-65;
-const hipY=-12;
-
-// Cabeça
-ac.beginPath();
-ac.arc(0,headY,19,0,Math.PI*2);
-ac.stroke();
-
-// Tronco
-limb(0,headY+20,0,hipY,10);
-
-// Braço esquerdo
-let lShoulder={x:-2,y:shoulderY};
-let lElbow={x:-28+Math.sin(s.armL)*15,y:-38+Math.cos(s.armL)*10};
-let lHand={x:-40+Math.sin(s.armL)*24,y:-8+Math.cos(s.armL)*14};
-limb(lShoulder.x,lShoulder.y,lElbow.x,lElbow.y,8);
-limb(lElbow.x,lElbow.y,lHand.x,lHand.y,7);
-
-// Braço direito
-let rShoulder={x:2,y:shoulderY};
-let rElbow={x:30+Math.sin(s.armR)*18,y:-42+Math.cos(s.armR)*12};
-let rHand={x:48+Math.sin(s.armR)*28,y:-15+Math.cos(s.armR)*18};
-limb(rShoulder.x,rShoulder.y,rElbow.x,rElbow.y,8);
-limb(rElbow.x,rElbow.y,rHand.x,rHand.y,7);
-
-// Arma na mão direita
-if(weapon?.length){
-drawWeapon(weapon,rHand.x,rHand.y,s.armR*.5,1);
+drawCircle(head,19,color);
+drawLine(chest,hip,12,color);
+drawLine(chest,point("la"),9,color);
+drawLine(point("la"),point("lf"),8,color);
+drawLine(chest,point("ra"),9,color);
+drawLine(point("ra"),point("rf"),8,color);
+drawLine(hip,point("lt"),10,color);
+drawLine(point("lt"),point("ls"),9,color);
+drawLine(hip,point("rt"),10,color);
+drawLine(point("rt"),point("rs"),9,color);
+drawWeaponAt(point("rf"),weapon);
+ctx.restore();
 }
 
-// Pernas
-let lKnee={x:-20+Math.sin(s.legL)*18,y:30+Math.cos(s.legL)*8};
-let lFoot={x:-28+Math.sin(s.legL)*34,y:65};
-let rKnee={x:20+Math.sin(s.legR)*18,y:30+Math.cos(s.legR)*8};
-let rFoot={x:28+Math.sin(s.legR)*34,y:65};
-limb(0,hipY,lKnee.x,lKnee.y,9);
-limb(lKnee.x,lKnee.y,lFoot.x,lFoot.y,8);
-limb(0,hipY,rKnee.x,rKnee.y,9);
-limb(rKnee.x,rKnee.y,rFoot.x,rFoot.y,8);
+function drawBackground(){
+const sky=ctx.createLinearGradient(0,0,0,VIEW_H);
+sky.addColorStop(0,"#83c5e8");
+sky.addColorStop(1,"#d9edf5");
+ctx.fillStyle=sky;
+ctx.fillRect(0,0,VIEW_W,VIEW_H);
 
-// Efeito visual de atordoamento
-if(s.stun>0){
-ac.fillStyle="#ffb52e";
-ac.font="bold 22px Arial";
-ac.fillText("✦",25,-125);
+// Montanhas distantes
+ctx.fillStyle="#a3c4c2";
+ctx.beginPath();
+ctx.moveTo(0,410);
+for(let x=0;x<=VIEW_W;x+=100){
+ctx.lineTo(x,300+Math.sin((x+camera.x*.15)*.004)*65);
 }
-ac.restore();
-}
+ctx.lineTo(VIEW_W,600);
+ctx.lineTo(0,600);
+ctx.fill();
 
-function renderArena(){
-ac.clearRect(0,0,900,440);
-ac.fillStyle="#e9e9f1";
-ac.fillRect(0,0,900,440);
-ac.fillStyle="#b8b8c9";
-ac.fillRect(0,365,900,75);
-ac.strokeStyle="#77778d";
-ac.lineWidth=5;
-ac.beginPath();ac.moveTo(0,365);ac.lineTo(900,365);ac.stroke();
-
-if(otherState){
-drawRagdoll(otherState,otherWeapon,"#c94f59");
-}
-drawRagdoll(myState,myWeapon,"#24243b");
+// Sol
+ctx.fillStyle="#fff1a8";
+ctx.beginPath();
+ctx.arc(820,100,42,0,Math.PI*2);
+ctx.fill();
 }
 
-// INÍCIO DA PARTIDA
+function drawWorld(){
+ctx.save();
+ctx.translate(-camera.x,-camera.y);
+drawBackgroundWorld();
+
+for(const b of platforms){
+const x=b.bounds.min.x,y=b.bounds.min.y;
+const w=b.bounds.max.x-x,h=b.bounds.max.y-y;
+ctx.fillStyle=b.label==="platform"?"#596778":"#8b735e";
+ctx.fillRect(x,y,w,h);
+ctx.fillStyle="rgba(255,255,255,.12)";
+ctx.fillRect(x,y,w,5);
+}
+
+ctx.restore();
+}
+function drawBackgroundWorld(){
+ctx.fillStyle="#b4d9ec";
+ctx.fillRect(0,0,WORLD_WIDTH,WORLD_HEIGHT);
+ctx.fillStyle="#a8c9b0";
+for(let i=0;i<18;i++){
+const x=i*260;
+ctx.beginPath();
+ctx.moveTo(x,FLOOR_Y);
+ctx.lineTo(x+100,550);
+ctx.lineTo(x+230,FLOOR_Y);
+ctx.fill();
+}
+}
+
+function render(){
+if(!myBody)return;
+const myCenter=centerOf(myBody);
+camera.x=Math.max(0,Math.min(WORLD_WIDTH-VIEW_W,myCenter.x-VIEW_W/2));
+camera.y=Math.max(0,Math.min(WORLD_HEIGHT-VIEW_H,myCenter.y-VIEW_H*.55));
+
+ctx.clearRect(0,0,VIEW_W,VIEW_H);
+drawWorld();
+
+ctx.save();
+ctx.translate(-camera.x,-camera.y);
+
+// Personagem local: partes físicas reais
+const p=myBody.parts;
+const fake={
+head:partPosition(p.head),
+chest:partPosition(p.chest),
+hip:partPosition(p.hip),
+la:partPosition(p.leftUpperArm),
+lf:partPosition(p.leftForearm),
+ra:partPosition(p.rightUpperArm),
+rf:partPosition(p.rightForearm),
+lt:partPosition(p.leftThigh),
+ls:partPosition(p.leftShin),
+rt:partPosition(p.rightThigh),
+rs:partPosition(p.rightShin)
+};
+drawRagdoll(fake,"#25243a",myWeapon);
+
+// Adversário: representação interpolada da física remota
+if(enemyData?.state){
+drawRagdoll(enemyData.state,"#c94f59",otherWeapon);
+}
+
+ctx.restore();
+
+// Indicador de posição
+ctx.fillStyle="#26354a";
+ctx.font="bold 14px Arial";
+ctx.fillText("ARENA ONLINE",15,25);
+}
+
+// PARTIDA
 function beginFight(){
 if(started)return;
 started=true;
 show("fight");
+createWorld();
+
+const spawn=slot==="p1"?450:650;
+myBody=createRagdoll(spawn,700);
+
 roomRef.child("players").on("value",snap=>{
 const p=snap.val()||{};
-const other=p[opponentSlot];
-if(other?.state)otherState=other.state;
-otherWeapon=other?.weapon||[];
+enemyData=p[opponentSlot]||null;
+otherWeapon=enemyData?.weapon||[];
+if(enemyData?.state?.hp!==undefined){
+if(slot==="p1")$("hp1").style.width=enemyData.state.hp+"%";
+else $("hp0").style.width=enemyData.state.hp+"%";
+}
 $("name0").textContent=p.p1?.name||"Jogador 1";
 $("name1").textContent=p.p2?.name||"Jogador 2";
-$("hp0").style.width=(p.p1?.state?.hp??100)+"%";
-$("hp1").style.width=(p.p2?.state?.hp??100)+"%";
 });
+
 roomRef.child("attacks").on("child_added",snap=>{
 const a=snap.val();
 if(!a||a.by===slot||seenAttacks[snap.key])return;
 seenAttacks[snap.key]=true;
-if(Math.abs(a.x-myState.x)<125&&Math.abs(a.y-myState.y)<120){
-const direction=a.x<myState.x?1:-1;
-receiveHit(direction,530,a.damage||15);
+const chest=myBody.parts.chest.position;
+const dx=chest.x-a.x;
+const dy=chest.y-a.y;
+if(Math.sqrt(dx*dx+dy*dy)<190){
+receiveHit(dx>=0?1:-1,a.damage||15);
 }
 });
+
 lastFrame=performance.now();
-gameLoop=requestAnimationFrame(loop);
-syncLoop=setInterval(syncState,100);
+requestAnimationFrame(gameLoop);
 }
 
-function loop(now){
+function gameLoop(now){
 if(!started||ended)return;
-const dt=Math.min((now-lastFrame)/1000,.035);
+const dt=Math.min((now-lastFrame)/1000,.033);
 lastFrame=now;
-physics(dt);
-renderArena();
-gameLoop=requestAnimationFrame(loop);
+
+// Matter.js usa passos fixos em milissegundos
+Engine.update(worldEngine,Math.min(dt*1000,33));
+
+render();
+
+if(now-lastSync>50){
+syncState();
+lastSync=now;
+}
+requestAnimationFrame(gameLoop);
 }
 
-function syncState(){
-if(!roomRef||!started||ended)return;
-roomRef.child("players/"+slot+"/state").set(myState).catch(()=>{});
-}
-
-// FINAL DE PARTIDA
+// FINAL
 async function finishGame(winner){
 if(ended)return;
-ended=true;started=false;
-cancelAnimationFrame(gameLoop);
-clearInterval(syncLoop);
-try{await roomRef.update({status:"finished",winner})}catch(e){}
+ended=true;
+started=false;
+try{
+await roomRef.update({status:"finished",winner});
+}catch(e){}
 showWinner();
 }
 function showWinner(){
@@ -570,9 +761,7 @@ return;
 }
 const winner=roomData.winner;
 if(!winner)return;
-ended=true;started=false;
-cancelAnimationFrame(gameLoop);
-clearInterval(syncLoop);
+ended=true;
 const winningName=winner==="p1"?
 (roomData.players.p1?.name||"Jogador 1"):
 (roomData.players.p2?.name||"Jogador 2");
@@ -582,20 +771,13 @@ show("end");
 }
 
 // CONTROLES
-function move(d){
-if(!started||ended||myState.stun>0)return;
-myState.vx+=d*85;
-myState.vx=Math.max(-340,Math.min(340,myState.vx));
-myState.face=d;
-myState.legLV+=d*.08;
-myState.legRV-=d*.08;
-}
 function bindHold(id,d){
 let timer=null;
 const b=$(id);
 b.addEventListener("pointerdown",e=>{
-e.preventDefault();move(d);
-timer=setInterval(()=>move(d),100);
+e.preventDefault();
+move(d);
+timer=setInterval(()=>move(d),70);
 });
 function stop(){if(timer)clearInterval(timer);timer=null}
 ["pointerup","pointerleave","pointercancel"].forEach(ev=>b.addEventListener(ev,stop));
