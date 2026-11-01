@@ -1,88 +1,986 @@
 
-<div class="products">
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#26003d">
 
-  <article class="product-card reveal">
-    <div class="product-image">
-      <img src="https://images.unsplash.com/photo-1627308594190-a057cd4bfac8?auto=format&fit=crop&w=1000&q=90" alt="Açaí tradicional">
+  <title>Universo do Açaí | Quirinópolis</title>
+
+  <meta name="description" content="Universo do Açaí: produção própria, muito sabor, delivery e retirada em Quirinópolis.">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    /* CONFIGURAÇÕES GERAIS */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: "DM Sans", sans-serif;
+      background: #fffaf4;
+      color: #281633;
+      overflow-x: hidden;
+    }
+
+    a {
+      text-decoration: none;
+      color: inherit;
+    }
+
+    img {
+      display: block;
+      max-width: 100%;
+    }
+
+    .container {
+      width: min(1160px, 90%);
+      margin: auto;
+    }
+
+    /* MENU */
+    header {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      z-index: 100;
+      padding: 22px 0;
+    }
+
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 25px;
+    }
+
+    .logo {
+      color: white;
+      font-family: "Poppins", sans-serif;
+      font-size: 23px;
+      font-weight: 800;
+    }
+
+    .logo span {
+      color: #d8f45b;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 28px;
+      list-style: none;
+      color: white;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .nav-links a:hover {
+      color: #d8f45b;
+    }
+
+    .nav-button {
+      background: #d8f45b;
+      color: #26003d;
+      padding: 12px 20px;
+      border-radius: 30px;
+      font-weight: 800;
+      transition: .3s;
+    }
+
+    .nav-button:hover {
+      transform: translateY(-3px);
+    }
+
+    /* INÍCIO */
+    .hero {
+      min-height: 690px;
+      padding: 130px 0 80px;
+      display: flex;
+      align-items: center;
+      background:
+        radial-gradient(circle at 75% 45%, #743b9b 0%, transparent 35%),
+        linear-gradient(120deg, #200035, #42006a);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .hero-content {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      align-items: center;
+      gap: 50px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .hero-text {
+      color: white;
+      animation: aparecer 1s ease;
+    }
+
+    .tag {
+      display: inline-block;
+      color: #d8f45b;
+      background: #ffffff18;
+      border: 1px solid #ffffff35;
+      padding: 9px 15px;
+      border-radius: 30px;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      margin-bottom: 24px;
+    }
+
+    .hero h1 {
+      font-family: "Poppins", sans-serif;
+      font-size: clamp(42px, 5.5vw, 68px);
+      line-height: 1.1;
+      margin-bottom: 22px;
+    }
+
+    .hero h1 span {
+      color: #d8f45b;
+    }
+
+    .hero-text p {
+      color: #eee1f4;
+      font-size: 17px;
+      line-height: 1.8;
+      max-width: 490px;
+      margin-bottom: 30px;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      padding: 15px 24px;
+      border-radius: 35px;
+      font-weight: 800;
+      transition: .3s;
+    }
+
+    .btn:hover {
+      transform: translateY(-4px);
+    }
+
+    .btn-primary {
+      background: #d8f45b;
+      color: #26003d;
+    }
+
+    .btn-secondary {
+      border: 1px solid #ffffff80;
+      color: white;
+    }
+
+    .hero-image {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      perspective: 1000px;
+    }
+
+    .hero-image img {
+      width: 100%;
+      max-width: 440px;
+      height: 440px;
+      object-fit: cover;
+      border-radius: 50%;
+      border: 9px solid #ffffff30;
+      box-shadow: 0 25px 60px #0005;
+      animation: flutuar 5s ease-in-out infinite;
+    }
+
+    /* BENEFÍCIOS */
+    .benefits {
+      background: #d8f45b;
+      padding: 20px 0;
+    }
+
+    .benefit-list {
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 20px;
+      color: #26003d;
+      font-weight: 800;
+      font-size: 14px;
+    }
+
+    /* SEÇÕES */
+    .section {
+      padding: 90px 0;
+    }
+
+    .section-heading {
+      text-align: center;
+      margin-bottom: 45px;
+    }
+
+    .section-heading span {
+      color: #762ba1;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    .section-heading h2 {
+      color: #310052;
+      font-family: "Poppins", sans-serif;
+      font-size: clamp(30px, 4vw, 43px);
+      margin-top: 10px;
+    }
+
+    .section-heading p {
+      color: #786d7e;
+      margin-top: 10px;
+      line-height: 1.6;
+    }
+
+    /* CARDÁPIO */
+    .products {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 26px;
+    }
+
+    .product-card {
+      background: white;
+      border-radius: 22px;
+      overflow: hidden;
+      box-shadow: 0 8px 30px #2b124015;
+      transition: .35s;
+      border: 1px solid #eee8f1;
+    }
+
+    .product-card:hover {
+      transform: translateY(-9px);
+      box-shadow: 0 18px 40px #2b124025;
+    }
+
+    .product-image {
+      height: 240px;
+      overflow: hidden;
+      background: #eee2f2;
+    }
+
+    .product-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform .5s;
+    }
+
+    .product-card:hover .product-image img {
+      transform: scale(1.07);
+    }
+
+    .product-info {
+      padding: 23px;
+    }
+
+    .product-info h3 {
+      color: #310052;
+      font-family: "Poppins", sans-serif;
+      font-size: 19px;
+      margin-bottom: 10px;
+    }
+
+    .product-info p {
+      color: #756b7c;
+      font-size: 14px;
+      line-height: 1.7;
+      min-height: 48px;
+    }
+
+    .product-bottom {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .price {
+      color: #5a2677;
+      font-weight: 800;
+      font-size: 13px;
+    }
+
+    .order-small {
+      background: #310052;
+      color: white;
+      padding: 10px 17px;
+      border-radius: 25px;
+      font-size: 12px;
+      font-weight: 800;
+      transition: .3s;
+    }
+
+    .order-small:hover {
+      background: #752ca0;
+    }
+
+    /* SOBRE */
+    .about {
+      background: #f1e8f6;
+    }
+
+    .about-content {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      align-items: center;
+      gap: 60px;
+    }
+
+    .about-image img {
+      width: 100%;
+      height: 420px;
+      object-fit: cover;
+      border-radius: 25px;
+      box-shadow: 15px 15px 0 #d8f45b;
+    }
+
+    .about-text span {
+      color: #762ba1;
+      font-weight: 800;
+      letter-spacing: 2px;
+      font-size: 12px;
+    }
+
+    .about-text h2 {
+      color: #310052;
+      font-family: "Poppins", sans-serif;
+      font-size: 38px;
+      line-height: 1.2;
+      margin: 15px 0 20px;
+    }
+
+    .about-text p {
+      color: #65586c;
+      line-height: 1.9;
+      margin-bottom: 16px;
+    }
+
+    .about-points {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-top: 25px;
+    }
+
+    .about-point {
+      background: white;
+      padding: 16px;
+      border-radius: 13px;
+      color: #310052;
+      font-weight: 800;
+      font-size: 13px;
+    }
+
+    /* DESTAQUE */
+    .promo {
+      background:
+        linear-gradient(90deg, #26003de8, #26003d99),
+        url("https://images.unsplash.com/photo-1627308594190-a057cd4bfac8?auto=format&fit=crop&w=1600&q=90") center/cover;
+      padding: 95px 0;
+      text-align: center;
+      color: white;
+    }
+
+    .promo h2 {
+      font-family: "Poppins", sans-serif;
+      font-size: clamp(30px, 4vw, 48px);
+      margin-bottom: 15px;
+    }
+
+    .promo p {
+      color: #f1e6f7;
+      margin-bottom: 28px;
+    }
+
+    /* GALERIA */
+    .gallery {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .gallery img {
+      width: 100%;
+      height: 220px;
+      object-fit: cover;
+      border-radius: 17px;
+      transition: .3s;
+    }
+
+    .gallery img:hover {
+      transform: scale(1.035);
+    }
+
+    /* CONTATO */
+    .contact {
+      background: #260035;
+      color: white;
+      text-align: center;
+      padding: 85px 0;
+    }
+
+    .contact h2 {
+      font-family: "Poppins", sans-serif;
+      font-size: 37px;
+      margin-bottom: 15px;
+    }
+
+    .contact p {
+      color: #e1d2eb;
+      margin-bottom: 30px;
+      line-height: 1.8;
+    }
+
+    .contact-details {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 15px;
+      margin-top: 30px;
+    }
+
+    .contact-item {
+      background: #ffffff12;
+      border: 1px solid #ffffff25;
+      padding: 15px 20px;
+      border-radius: 14px;
+      font-size: 14px;
+    }
+
+    /* RODAPÉ */
+    footer {
+      background: #160025;
+      color: #cbbbd5;
+      padding: 28px 0;
+      text-align: center;
+      font-size: 13px;
+      line-height: 1.8;
+    }
+
+    footer strong {
+      color: #d8f45b;
+    }
+
+    /* WHATSAPP */
+    .whatsapp-float {
+      position: fixed;
+      right: 22px;
+      bottom: 22px;
+      z-index: 200;
+      width: 60px;
+      height: 60px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border-radius: 50%;
+      background: #25d366;
+      color: white;
+      font-size: 29px;
+      box-shadow: 0 8px 25px #0004;
+      transition: .3s;
+    }
+
+    .whatsapp-float:hover {
+      transform: scale(1.1);
+    }
+
+    /* ANIMAÇÕES */
+    @keyframes flutuar {
+      0%, 100% {
+        transform: translateY(0) rotateY(-5deg);
+      }
+      50% {
+        transform: translateY(-14px) rotateY(5deg);
+      }
+    }
+
+    @keyframes aparecer {
+      from {
+        opacity: 0;
+        transform: translateY(25px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(25px);
+      transition: opacity .7s ease, transform .7s ease;
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* CELULARES E TABLETS */
+    @media (max-width: 850px) {
+      .hero-content,
+      .about-content {
+        grid-template-columns: 1fr;
+      }
+
+      .hero {
+        text-align: center;
+      }
+
+      .hero-text p {
+        margin-left: auto;
+        margin-right: auto;
+      }
+
+      .hero-actions {
+        justify-content: center;
+      }
+
+      .hero-image img {
+        max-width: 360px;
+        height: 360px;
+      }
+
+      .products {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .gallery {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .about-image {
+        max-width: 550px;
+        margin: auto;
+      }
+    }
+
+    @media (max-width: 580px) {
+      header {
+        padding: 17px 0;
+      }
+
+      .logo {
+        font-size: 17px;
+      }
+
+      .nav-links {
+        gap: 12px;
+        font-size: 12px;
+      }
+
+      .nav-links li:nth-child(2),
+      .nav-links li:nth-child(3) {
+        display: none;
+      }
+
+      .nav-button {
+        padding: 10px 13px;
+        font-size: 12px;
+      }
+
+      .hero {
+        min-height: auto;
+        padding: 120px 0 65px;
+      }
+
+      .hero h1 {
+        font-size: 42px;
+      }
+
+      .hero-text p {
+        font-size: 15px;
+      }
+
+      .hero-image img {
+        max-width: 290px;
+        height: 290px;
+      }
+
+      .products {
+        grid-template-columns: 1fr;
+      }
+
+      .product-image {
+        height: 250px;
+      }
+
+      .section {
+        padding: 70px 0;
+      }
+
+      .about-image img {
+        height: 300px;
+      }
+
+      .about-text h2 {
+        font-size: 31px;
+      }
+
+      .gallery img {
+        height: 155px;
+      }
+
+      .contact h2 {
+        font-size: 30px;
+      }
+
+      .benefit-list {
+        font-size: 12px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- MENU -->
+  <header>
+    <div class="container navbar">
+
+      <a href="#inicio" class="logo">
+        UNIVERSO <span>DO AÇAÍ</span>
+      </a>
+
+      <ul class="nav-links">
+        <li><a href="#inicio">Início</a></li>
+        <li><a href="#produtos">Cardápio</a></li>
+        <li><a href="#sobre">Sobre</a></li>
+        <li><a href="#contato">Contato</a></li>
+      </ul>
+
+      <a class="nav-button"
+         href="https://wa.me/5564984046948"
+         target="_blank">
+        Pedir agora
+      </a>
+
     </div>
-    <div class="product-info">
-      <h3>🍇 Açaí Tradicional</h3>
-      <p>Açaí cremoso, banana em rodelas e granola crocante.</p>
-      <div class="product-bottom">
-        <span class="price">Consulte o preço</span>
-        <a class="order-small" href="https://wa.me/5564984046948?text=Quero%20pedir%20o%20A%C3%A7a%C3%AD%20Tradicional" target="_blank">Pedir</a>
+  </header>
+
+  <!-- HERO -->
+  <section class="hero" id="inicio">
+    <div class="container hero-content">
+
+      <div class="hero-text">
+        <span class="tag">O UNIVERSO DO SABOR</span>
+
+        <h1>
+          Seu momento merece um <span>bom açaí!</span>
+        </h1>
+
+        <p>
+          Muito sabor, qualidade e produção própria.
+          Descubra seu novo lugar favorito para aproveitar
+          um açaí delicioso!
+        </p>
+
+        <div class="hero-actions">
+          <a href="https://wa.me/5564984046948?text=Ol%C3%A1!%20Quero%20fazer%20um%20pedido."
+             target="_blank"
+             class="btn btn-primary">
+            Fazer pedido →
+          </a>
+
+          <a href="#produtos" class="btn btn-secondary">
+            Ver cardápio
+          </a>
+        </div>
+      </div>
+
+      <div class="hero-image">
+        <img
+          src="https://images.unsplash.com/photo-1627308594190-a057cd4bfac8?auto=format&fit=crop&w=1000&q=90"
+          alt="Açaí servido com frutas">
+      </div>
+
+    </div>
+  </section>
+
+  <!-- BENEFÍCIOS -->
+  <section class="benefits">
+    <div class="container benefit-list">
+      <span>🍇 Produção própria</span>
+      <span>💜 Muito sabor</span>
+      <span>🛵 Delivery e retirada</span>
+      <span>✨ Feito com carinho</span>
+    </div>
+  </section>
+
+  <!-- CARDÁPIO -->
+  <section class="section" id="produtos">
+    <div class="container">
+
+      <div class="section-heading reveal">
+        <span>Nosso cardápio</span>
+        <h2>Escolha seu favorito</h2>
+        <p>Confira algumas combinações deliciosas de açaí.</p>
+      </div>
+
+      <div class="products">
+
+        <article class="product-card reveal">
+          <div class="product-image">
+            <img
+              src="https://images.unsplash.com/photo-1627308594190-a057cd4bfac8?auto=format&fit=crop&w=1000&q=90"
+              alt="Açaí tradicional">
+          </div>
+          <div class="product-info">
+            <h3>🍇 Açaí Tradicional</h3>
+            <p>Açaí cremoso, banana em rodelas e granola crocante.</p>
+            <div class="product-bottom">
+              <span class="price">Consulte o preço</span>
+              <a class="order-small" href="https://wa.me/5564984046948?text=Quero%20pedir%20o%20A%C3%A7a%C3%AD%20Tradicional" target="_blank">Pedir</a>
+            </div>
+          </div>
+        </article>
+
+        <article class="product-card reveal">
+          <div class="product-image">
+            <img
+              src="https://commons.wikimedia.org/wiki/Special:FilePath/A%C3%A7a%C3%AD%20na%20tigela%201.jpg?width=1000"
+              alt="Açaí tropical">
+          </div>
+          <div class="product-info">
+            <h3>🍓 Açaí Tropical</h3>
+            <p>Açaí, morango fresco, banana e granola.</p>
+            <div class="product-bottom">
+              <span class="price">Consulte o preço</span>
+              <a class="order-small" href="https://wa.me/5564984046948?text=Quero%20pedir%20o%20A%C3%A7a%C3%AD%20Tropical" target="_blank">Pedir</a>
+            </div>
+          </div>
+        </article>
+
+        <article class="product-card reveal">
+          <div class="product-image">
+            <img
+              src="https://commons.wikimedia.org/wiki/Special:FilePath/A%C3%A7a%C3%AD%20bowl%20%286469934187%29.jpg?width=1000"
+              alt="Açaí com leite em pó">
+          </div>
+          <div class="product-info">
+            <h3>🥛 Açaí com Ninho</h3>
+            <p>Açaí cremoso, leite em pó, banana e leite condensado.</p>
+            <div class="product-bottom">
+              <span class="price">Consulte o preço</span>
+              <a class="order-small" href="https://wa.me/5564984046948?text=Quero%20pedir%20o%20A%C3%A7a%C3%AD%20com%20Ninho" target="_blank">Pedir</a>
+            </div>
+          </div>
+        </article>
+
+        <article class="product-card reveal">
+          <div class="product-image">
+            <img
+              src="https://images.unsplash.com/photo-1627308594190-a057cd4bfac8?auto=format&fit=crop&w=1000&q=90"
+              alt="Açaí com paçoca">
+          </div>
+          <div class="product-info">
+            <h3>🥜 Açaí com Paçoca</h3>
+            <p>Açaí, paçoca triturada, banana e leite condensado.</p>
+            <div class="product-bottom">
+              <span class="price">Consulte o preço</span>
+              <a class="order-small" href="https://wa.me/5564984046948?text=Quero%20pedir%20o%20A%C3%A7a%C3%AD%20com%20Pa%C3%A7oca" target="_blank">Pedir</a>
+            </div>
+          </div>
+        </article>
+
+        <article class="product-card reveal">
+          <div class="product-image">
+            <img
+              src="https://commons.wikimedia.org/wiki/Special:FilePath/A%C3%A7a%C3%AD%20na%20tigela%201.jpg?width=1000"
+              alt="Açaí com chocolate">
+          </div>
+          <div class="product-info">
+            <h3>🍫 Açaí Chocolatudo</h3>
+            <p>Açaí, creme de avelã, leite em pó e granulado de chocolate.</p>
+            <div class="product-bottom">
+              <span class="price">Consulte o preço</span>
+              <a class="order-small" href="https://wa.me/5564984046948?text=Quero%20pedir%20o%20A%C3%A7a%C3%AD%20Chocolatudo" target="_blank">Pedir</a>
+            </div>
+          </div>
+        </article>
+
+        <article class="product-card reveal">
+          <div class="product-image">
+            <img
+              src="https://commons.wikimedia.org/wiki/Special:FilePath/A%C3%A7a%C3%AD%20bowl%20%286469934187%29.jpg?width=1000"
+              alt="Açaí completo">
+          </div>
+          <div class="product-info">
+            <h3>⭐ Açaí Completo</h3>
+            <p>Açaí, banana, morango, granola, leite em pó e leite condensado.</p>
+            <div class="product-bottom">
+              <span class="price">Consulte o preço</span>
+              <a class="order-small" href="https://wa.me/5564984046948?text=Quero%20pedir%20o%20A%C3%A7a%C3%AD%20Completo" target="_blank">Pedir</a>
+            </div>
+          </div>
+        </article>
+
       </div>
     </div>
-  </article>
+  </section>
 
-  <article class="product-card reveal">
-    <div class="product-image">
-      <img src="https://commons.wikimedia.org/wiki/Special:FilePath/A%C3%A7a%C3%AD%20na%20tigela%201.jpg?width=1000" alt="Açaí com morango">
-    </div>
-    <div class="product-info">
-      <h3>🍓 Açaí Tropical</h3>
-      <p>Açaí, morango fresco, banana e granola.</p>
-      <div class="product-bottom">
-        <span class="price">Consulte o preço</span>
-        <a class="order-small" href="https://wa.me/5564984046948?text=Quero%20pedir%20o%20A%C3%A7a%C3%AD%20Tropical" target="_blank">Pedir</a>
+  <!-- SOBRE -->
+  <section class="section about" id="sobre">
+    <div class="container about-content">
+
+      <div class="about-image reveal">
+        <img
+          src="https://images.unsplash.com/photo-1627308594190-a057cd4bfac8?auto=format&fit=crop&w=1000&q=90"
+          alt="Tigela de açaí com frutas">
       </div>
-    </div>
-  </article>
 
-  <article class="product-card reveal">
-    <div class="product-image">
-      <img src="https://commons.wikimedia.org/wiki/Special:FilePath/A%C3%A7a%C3%AD%20bowl%20%286469934187%29.jpg?width=1000" alt="Açaí com leite em pó">
-    </div>
-    <div class="product-info">
-      <h3>🥛 Açaí com Ninho</h3>
-      <p>Açaí cremoso, leite em pó, banana e leite condensado.</p>
-      <div class="product-bottom">
-        <span class="price">Consulte o preço</span>
-        <a class="order-small" href="https://wa.me/5564984046948?text=Quero%20pedir%20o%20A%C3%A7a%C3%AD%20com%20Ninho" target="_blank">Pedir</a>
+      <div class="about-text reveal">
+        <span>CONHEÇA O UNIVERSO</span>
+
+        <h2>Mais que açaí, uma experiência de sabor!</h2>
+
+        <p>
+          O Universo do Açaí acredita que os melhores momentos
+          ficam ainda melhores quando acompanhados de muito sabor.
+        </p>
+
+        <p>
+          Com produção própria, buscamos oferecer uma experiência
+          deliciosa para quem ama açaí. Seja para refrescar o dia,
+          fazer uma pausa ou compartilhar com alguém especial.
+        </p>
+
+        <div class="about-points">
+          <div class="about-point">💜 Produção própria</div>
+          <div class="about-point">🍇 Muito sabor</div>
+          <div class="about-point">🛵 Delivery</div>
+          <div class="about-point">✨ Qualidade</div>
+        </div>
       </div>
-    </div>
-  </article>
 
-  <article class="product-card reveal">
-    <div class="product-image">
-      <img src="https://images.unsplash.com/photo-1627308594190-a057cd4bfac8?auto=format&fit=crop&w=1000&q=90" alt="Açaí com paçoca">
     </div>
-    <div class="product-info">
-      <h3>🥜 Açaí com Paçoca</h3>
-      <p>Açaí, paçoca triturada, banana e leite condensado.</p>
-      <div class="product-bottom">
-        <span class="price">Consulte o preço</span>
-        <a class="order-small" href="https://wa.me/5564984046948?text=Quero%20pedir%20o%20A%C3%A7a%C3%AD%20com%20Pa%C3%A7oca" target="_blank">Pedir</a>
+  </section>
+
+  <!-- DESTAQUE -->
+  <section class="promo">
+    <div class="container reveal">
+      <h2>Seu próximo açaí está esperando por você!</h2>
+
+      <p>
+        Entre em contato e faça seu pedido pelo WhatsApp.
+      </p>
+
+      <a href="https://wa.me/5564984046948?text=Ol%C3%A1!%20Quero%20fazer%20um%20pedido."
+         target="_blank"
+         class="btn btn-primary">
+        Pedir pelo WhatsApp →
+      </a>
+    </div>
+  </section>
+
+  <!-- GALERIA -->
+  <section class="section">
+    <div class="container">
+
+      <div class="section-heading reveal">
+        <span>Um universo de sabor</span>
+        <h2>Nosso cantinho do açaí</h2>
+        <p>Imagens ilustrativas de açaí.</p>
       </div>
-    </div>
-  </article>
 
-  <article class="product-card reveal">
-    <div class="product-image">
-      <img src="https://commons.wikimedia.org/wiki/Special:FilePath/A%C3%A7a%C3%AD%20na%20tigela%201.jpg?width=1000" alt="Açaí com creme de avelã">
-    </div>
-    <div class="product-info">
-      <h3>🍫 Açaí Chocolatudo</h3>
-      <p>Açaí, creme de avelã, leite em pó e granulado de chocolate.</p>
-      <div class="product-bottom">
-        <span class="price">Consulte o preço</span>
-        <a class="order-small" href="https://wa.me/5564984046948?text=Quero%20pedir%20o%20A%C3%A7a%C3%AD%20Chocolatudo" target="_blank">Pedir</a>
+      <div class="gallery reveal">
+        <img src="https://images.unsplash.com/photo-1627308594190-a057cd4bfac8?auto=format&fit=crop&w=800&q=85" alt="Açaí na tigela">
+        <img src="https://commons.wikimedia.org/wiki/Special:FilePath/A%C3%A7a%C3%AD%20na%20tigela%201.jpg?width=800" alt="Tigela de açaí">
+        <img src="https://commons.wikimedia.org/wiki/Special:FilePath/A%C3%A7a%C3%AD%20bowl%20%286469934187%29.jpg?width=800" alt="Açaí com frutas">
+        <img src="https://images.unsplash.com/photo-1627308594190-a057cd4bfac8?auto=format&fit=crop&w=800&q=85" alt="Açaí servido">
       </div>
-    </div>
-  </article>
 
-  <article class="product-card reveal">
-    <div class="product-image">
-      <img src="https://commons.wikimedia.org/wiki/Special:FilePath/A%C3%A7a%C3%AD%20bowl%20%286469934187%29.jpg?width=1000" alt="Açaí completo">
     </div>
-    <div class="product-info">
-      <h3>⭐ Açaí Completo</h3>
-      <p>Açaí, banana, morango, granola, leite em pó e leite condensado.</p>
-      <div class="product-bottom">
-        <span class="price">Consulte o preço</span>
-        <a class="order-small" href="https://wa.me/5564984046948?text=Quero%20pedir%20o%20A%C3%A7a%C3%AD%20Completo" target="_blank">Pedir</a>
+  </section>
+
+  <!-- CONTATO -->
+  <section class="contact" id="contato">
+    <div class="container reveal">
+
+      <h2>Vamos pedir um açaí?</h2>
+
+      <p>
+        Entre em contato com o Universo do Açaí.<br>
+        Faça seu pedido pelo WhatsApp!
+      </p>
+
+      <a href="https://wa.me/5564984046948?text=Ol%C3%A1!%20Vim%20pelo%20site%20do%20Universo%20do%20A%C3%A7a%C3%AD."
+         target="_blank"
+         class="btn btn-primary">
+        Conversar pelo WhatsApp →
+      </a>
+
+      <div class="contact-details">
+        <div class="contact-item">📍 Quirinópolis - GO</div>
+        <div class="contact-item">📱 (64) 98404-6948</div>
+        <div class="contact-item">📸 @o_universo_do_acaii</div>
       </div>
-    </div>
-  </article>
 
-</div>
+    </div>
+  </section>
+
+  <!-- RODAPÉ -->
+  <footer>
+    <div class="container">
+      <p>© 2026 <strong>Universo do Açaí</strong> — Todos os direitos reservados.</p>
+      <p>Feito com 💜 para os amantes de açaí.</p>
+    </div>
+  </footer>
+
+  <!-- WHATSAPP FLUTUANTE -->
+  <a
+    class="whatsapp-float"
+    href="https://wa.me/5564984046948?text=Ol%C3%A1!%20Quero%20fazer%20um%20pedido."
+    target="_blank"
+    aria-label="Falar pelo WhatsApp">
+    ☎
+  </a>
+
+  <!-- JAVASCRIPT -->
+  <script>
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("visible");
+          observer.unobserve(entry.target);
+        }
+      });
+    }, {
+      threshold: 0.12
+    });
+
+    document.querySelectorAll(".reveal").forEach(element => {
+      observer.observe(element);
+    });
+  </script>
+
+</body>
+</html>
